@@ -275,12 +275,40 @@ jobs:
           echo "NFL schedule downloaded successfully."
           echo "Schedule rows: $(($(wc -l < data/schedule.csv) - 1))"
 
+
+      - name: Download NFL play-by-play data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data
+          for year in 2020 2021 2022 2023 2024 2025 2026; do
+            output="data/play_by_play_${year}.csv"
+            url="https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${year}.csv"
+            if ! curl --silent --show-error --fail --location --retry 3 "$url" --output "$output.tmp"; then
+              echo "::error::Could not download NFL play-by-play data for ${year}."
+              exit 1
+            fi
+            test -s "$output.tmp"
+            mv "$output.tmp" "$output"
+            echo "Downloaded play-by-play for ${year}"
+          done
+
+      - name: Calculate weekly team statistics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_team_stats.py
+          for year in 2020 2021 2022 2023 2024 2025 2026; do
+            test -s "data/stats_team_week_${year}.csv"
+          done
+
       - name: Prepare dashboard files
         run: |
           set -euo pipefail
           mkdir -p site/data
           cp index.html site/index.html
           cp data/stats_player_week_*.csv site/data/
+          cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
 
       - name: Configure GitHub Pages
