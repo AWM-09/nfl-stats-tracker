@@ -20,7 +20,7 @@ FIELDS = [
     "plays_leading", "plays_trailing", "plays_tied",
     "plays_q1", "plays_q2", "plays_q3", "plays_q4", "plays_q5plus",
     "drives", "scoring_drives", "scoring_drive_rate",
-    "plays_allowed", "yards_allowed", "epa_allowed", "success_rate_allowed",
+    "plays_allowed", "yards_allowed", "epa_allowed", "successes_allowed", "success_rate_allowed",
     "explosive_plays_allowed", "third_down_attempts_allowed",
     "third_down_conversions_allowed", "fourth_down_attempts_allowed",
     "fourth_down_conversions_allowed", "red_zone_plays_allowed", "red_zone_tds_allowed"
@@ -176,6 +176,7 @@ for year in YEARS:
                 "scoring_drive_rate": pct(d["scoring_drives"], d["drives"]),
                 "plays_allowed": int(d["plays_allowed"]), "yards_allowed": round(d["yards_allowed"], 3),
                 "epa_allowed": round(d["epa_allowed"], 3),
+                "successes_allowed": int(d["successes_allowed"]),
                 "success_rate_allowed": pct(d["successes_allowed"], d["plays_allowed"]),
                 "explosive_plays_allowed": int(d["explosive_plays_allowed"]),
                 "third_down_attempts_allowed": int(d["third_down_attempts_allowed"]),
