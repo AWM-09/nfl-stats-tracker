@@ -565,7 +565,8 @@ function setupTeamCompare(){
 }
 function refreshTeamWeeks(){const ws=[...new Set(raw.filter(r=>r.season===+$('teamCompareYear').value).map(r=>r.week))].sort((a,b)=>a-b);$('teamCompareWeeks').innerHTML=ws.map(w=>`<label><input type="checkbox" data-team-week value="${w}" checked>W${w}</label>`).join('')}
 function renderTeamCompare(){
- if(!$('teamStatSelect'))return;
+ const chart=$('teamCompareChart'),message=$('teamCompareMessage');
+ if(!$('teamStatSelect')){if(chart)chart.innerHTML='<div class="muted">Statistics controls have not loaded. Refresh the page.</div>';return;}
  const stats=[...selectedTeamCompareStats],year=+$('teamCompareYear').value,phase=$('teamComparePhase').value;
  const teams=[...selectedTeamCompareTeams],weeks=[...$('teamCompareWeeks').querySelectorAll('input:checked')].map(e=>+e.value);
  const es=teams.map(team=>({team,label:teamName(team),values:Object.fromEntries(stats.map(k=>[k,teamCompareValue(team,k,year,weeks,phase)]))}));
@@ -579,8 +580,9 @@ function renderTeamCompare(){
  else if(!valid.length)chart.innerHTML='<div class="muted">No data found for these teams and settings.</div>';
  else{const maxAbs=Math.max(1,...valid.map(e=>Math.abs(Number(e.values[primary].value))));chart.innerHTML=valid.map(e=>{const v=Number(e.values[primary].value),w=Math.abs(v)/maxAbs*48,left=v>=0?50:50-w;return `<div class="compare-bar-row"><div class="compare-bar-name" title="${esc(e.label)}">${esc(e.label)}</div><div class="compare-bar-track"><div class="compare-bar-fill" style="left:${left}%;width:${w}%"></div></div><div class="compare-bar-value">${esc(fmt(v,primary))}</div></div>`}).join('')}
  const missing=es.filter(e=>stats.length&&!e.values[stats[0]]||stats.length&&e.values[stats[0]].value===null);
- $('teamCompareMessage').textContent=!stats.length?'Select one or more statistics above.':!teams.length?'Select a team from the dropdown and click Add team; repeat to add more teams.':teams.length<2?'Choose at least two teams to compare.':!weeks.length?'Select at least one week.':missing.length?`No matching data for: ${missing.map(e=>e.label).join(', ')}.`:`Comparing ${teams.length} teams across ${stats.length} statistics for ${year}. The table shows all selected statistics; the chart uses the first selected statistic.`;
+ $('teamCompareMessage').textContent=!stats.length?'Add at least one statistic using the dropdown above.':!teams.length?'Select a team from the dropdown and click Add team; repeat to add more teams.':teams.length<2?'Choose at least two teams to compare.':!weeks.length?'Select at least one week.':missing.length?`No matching data for: ${missing.map(e=>e.label).join(', ')}.`:`Comparing ${teams.length} teams across ${stats.length} statistics for ${year}. The table shows all selected statistics; the chart uses the first selected statistic.`;
 }
+
 function fillSuggestions(){const players=[...new Set(raw.map(r=>r.player).filter(Boolean))].sort((a,b)=>a.localeCompare(b));$('playerSuggestions').innerHTML=players.map(n=>`<option value="${esc(n)}"></option>`).join('')}
 function populateFactPlayerTeamOptions(){
  const playerSel=$('factPlayers'),teamSel=$('factTeams');
