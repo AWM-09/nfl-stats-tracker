@@ -141,7 +141,7 @@ select option:checked {
   <div class="field"><label for="teamStatMetric">Team statistic</label><select id="teamStatMetric">
    <optgroup label="Scoring"><option value="points_scored_per_game">Points scored per game</option><option value="points_allowed_per_game">Points allowed per game</option><option value="point_differential">Point differential</option></optgroup>
    <optgroup label="Yardage"><option value="offensive_yards_per_game">Total yards per game</option><option value="yards_allowed_per_game">Yards allowed per game</option><option value="yards_per_play">Yards per play</option></optgroup>
-   <optgroup label="Efficiency"><option value="turnover_differential">Turnover differential</option><option value="third_down_pct">Third-down conversion %</option><option value="third_down_pct_allowed">Third-down % allowed</option><option value="red_zone_td_pct">Red-zone TD %</option><option value="red_zone_td_pct_allowed">Red-zone TD % allowed</option><option value="offensive_red_zone_turnovers">Offensive red-zone turnovers</option><option value="defensive_red_zone_turnovers">Defensive red-zone turnovers forced</option><option value="time_of_possession_seconds">Time of possession</option></optgroup>
+   <optgroup label="Efficiency"><option value="turnover_differential">Turnover differential</option><option value="third_down_pct">Third-down conversion %</option><option value="third_down_pct_allowed">Third-down % allowed</option><option value="fourth_down_conversions">Fourth-down conversions</option><option value="fourth_down_pct">Fourth-down conversion %</option><option value="red_zone_td_pct">Red-zone TD %</option><option value="red_zone_td_pct_allowed">Red-zone TD % allowed</option><option value="offensive_red_zone_turnovers">Offensive red-zone turnovers</option><option value="defensive_red_zone_turnovers">Defensive red-zone turnovers forced</option><option value="time_of_possession_seconds">Time of possession</option></optgroup>
    <optgroup label="Penalties & big plays"><option value="penalties">Penalties</option><option value="penalty_yards">Penalty yards</option><option value="explosive_plays_20_plus">Explosive plays (20+ yards)</option><option value="longest_play_td">Longest touchdown play</option><option value="longest_play_non_td">Longest non-touchdown play</option><option value="longest_play">Longest play overall</option></optgroup>
   </select></div>
   <div class="field"><label for="teamStatsPhase">Season phase</label><select id="teamStatsPhase"><option value="REG">Regular season</option><option value="POST">Playoffs</option><option value="ALL">Regular season + playoffs</option></select></div>
@@ -428,7 +428,7 @@ function renderFactGenerator(){
 const TEAM_STAT_LABELS={
  points_scored_per_game:'Points scored per game',points_allowed_per_game:'Points allowed per game',point_differential:'Point differential',
  offensive_yards_per_game:'Total yards per game',yards_allowed_per_game:'Yards allowed per game',yards_per_play:'Yards per play',
- turnover_differential:'Turnover differential',third_down_pct:'Third-down conversion %',third_down_pct_allowed:'Third-down % allowed',
+ turnover_differential:'Turnover differential',third_down_pct:'Third-down conversion %',third_down_pct_allowed:'Third-down % allowed',fourth_down_conversions:'Fourth-down conversions',fourth_down_pct:'Fourth-down conversion %',
  red_zone_td_pct:'Red-zone TD %',red_zone_td_pct_allowed:'Red-zone TD % allowed',offensive_red_zone_turnovers:'Offensive red-zone turnovers',defensive_red_zone_turnovers:'Defensive red-zone turnovers forced',time_of_possession_seconds:'Time of possession',
  penalties:'Penalties',penalty_yards:'Penalty yards',explosive_plays_20_plus:'Explosive plays (20+ yards)',
  longest_play_td:'Longest touchdown play',longest_play_non_td:'Longest non-touchdown play',longest_play:'Longest play overall'
@@ -471,6 +471,8 @@ function renderTeamStats(){
   else if(k==='point_differential')value=total('points_scored')-total('points_allowed');
   else if(k==='yards_per_play')value=rs.reduce((s,r)=>s+Number(r.yards_per_play||0)*Number(r.offensive_plays||0),0)/Math.max(1,rs.reduce((s,r)=>s+Number(r.offensive_plays||0),0));
   else if(k==='third_down_pct')value=total('third_down_attempts')?100*total('third_down_conversions')/total('third_down_attempts'):null;
+  else if(k==='fourth_down_conversions')value=total('fourth_down_conversions');
+  else if(k==='fourth_down_pct')value=total('fourth_down_attempts')?100*total('fourth_down_conversions')/total('fourth_down_attempts'):null;
   else if(k==='third_down_pct_allowed')value=total('third_down_pct_allowed')/rs.length;
   else if(k==='red_zone_td_pct')value=total('red_zone_trips')?100*total('red_zone_tds')/total('red_zone_trips'):null;
   else if(k==='red_zone_td_pct_allowed')value=total('red_zone_td_pct_allowed')/rs.length;
