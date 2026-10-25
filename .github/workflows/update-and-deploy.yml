@@ -301,6 +301,7 @@ jobs:
           python3 scripts/build_advanced_stats.py
           for year in 2020 2021 2022 2023 2024 2025 2026; do
             test -s "data/stats_team_week_${year}.csv"
+            test -s "data/advanced_team_week_${year}.csv"
           done
 
       - name: Prepare dashboard files
