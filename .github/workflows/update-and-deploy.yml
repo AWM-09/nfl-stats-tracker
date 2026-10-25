@@ -315,7 +315,9 @@ jobs:
           cp data/stats_player_week_*.csv site/data/
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
-          cp data/play_by_play_2026.csv site/data/play_by_play_2026.csv
+          for year in 2020 2021 2022 2023 2024 2025 2026; do
+            cp "data/play_by_play_${year}.csv" "site/data/play_by_play_${year}.csv"
+          done
           python3 - <<'PY'
           from pathlib import Path
           path = Path("site/index.html")
