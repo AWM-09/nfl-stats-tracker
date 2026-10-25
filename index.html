@@ -507,7 +507,7 @@ function renderPlayerCompare(){
  }
  $('comparisonHead').innerHTML='<tr><th>Statistic</th>'+es.map(e=>`<th>${esc(e.player||`Player ${e.i}`)}</th>`).join('')+'</tr>';
  const rows=[];
- stats.forEach(k=>{rows.push([`${metrics[k].label}`,e=>{const v=e.values[k]?.value;return v===null||v===undefined?'—':fmt(v,k)}]);});
+ stats.forEach(k=>{rows.push([`${metrics[k].label}`,e=>{const v=e.values[k]?.value;return v===null||v===undefined?'—':fmt(v,k)}]);const nums=es.map(e=>e.values[k]?.value).filter(v=>v!==null&&v!==undefined&&Number.isFinite(Number(v))).map(Number);const diff=nums.length>=2?Math.max(...nums)-Math.min(...nums):null;rows.push([`${metrics[k].label} differential (amount)`,e=>{const v=e.values[k]?.value;if(diff===null||v===null||v===undefined||!Number.isFinite(Number(v)))return '—';const n=Number(v);const lo=Math.min(...nums);return (n===lo?'Lowest':n===Math.max(...nums)?'Highest':'')+(n===lo||n===Math.max(...nums)?' · ':'')+fmt(diff,k)}]);});
  rows.push(['Season',e=>e.year],['Phase',e=>e.phase==='REG'?'Regular season':e.phase==='POST'?'Playoffs':'Regular + playoffs'],['Selected weeks',e=>e.weeks.length?e.weeks.map(w=>'W'+w).join(', '):'None selected'],['Weeks with data',e=>e.weeksFound.length?e.weeksFound.map(w=>'W'+w).join(', '):'—'],['Team',e=>String(e.team||'—').split(', ').map(teamName).join(', ')]);
  $('comparisonBody').innerHTML=rows.map(([label,fn])=>`<tr><td><b>${esc(label)}</b></td>${es.map(e=>`<td>${esc(String(fn(e)))}</td>`).join('')}</tr>`).join('');
  const chart=$('comparisonChart'),primary=stats[0];
@@ -570,7 +570,7 @@ function renderTeamCompare(){
  const teams=[...selectedTeamCompareTeams],weeks=[...$('teamCompareWeeks').querySelectorAll('input:checked')].map(e=>+e.value);
  const es=teams.map(team=>({team,label:teamName(team),values:Object.fromEntries(stats.map(k=>[k,teamCompareValue(team,k,year,weeks,phase)]))}));
  $('teamCompareHead').innerHTML='<tr><th>Statistic</th>'+es.map(e=>`<th>${esc(e.label)}</th>`).join('')+'</tr>';
- const rows=[];stats.forEach(k=>rows.push([`${metrics[k].label}`,e=>{const v=e.values[k]?.value;return v===null||v===undefined?'—':fmt(v,k)}]));
+ const rows=[];stats.forEach(k=>{rows.push([`${metrics[k].label}`,e=>{const v=e.values[k]?.value;return v===null||v===undefined?'—':fmt(v,k)}]);const nums=es.map(e=>e.values[k]?.value).filter(v=>v!==null&&v!==undefined&&Number.isFinite(Number(v))).map(Number);const diff=nums.length>=2?Math.max(...nums)-Math.min(...nums):null;rows.push([`${metrics[k].label} differential (amount)`,e=>{const v=e.values[k]?.value;if(diff===null||v===null||v===undefined||!Number.isFinite(Number(v)))return '—';const n=Number(v),lo=Math.min(...nums),hi=Math.max(...nums);return (n===lo?'Lowest':n===hi?'Highest':'')+(n===lo||n===hi?' · ':'')+fmt(diff,k)}])});
  rows.push(['Season',()=>year],['Phase',()=>phase==='REG'?'Regular season':phase==='POST'?'Playoffs':'Regular + playoffs'],['Selected weeks',()=>weeks.length?weeks.map(w=>'W'+w).join(', '):'None selected']);
  $('teamCompareBody').innerHTML=rows.map(([label,fn])=>`<tr><td><b>${esc(label)}</b></td>${es.map(e=>`<td>${esc(String(fn(e)))}</td>`).join('')}</tr>`).join('');
  const primary=stats[0],valid=es.filter(e=>e.values[primary]?.value!==null&&Number.isFinite(Number(e.values[primary]?.value))),chart=$('teamCompareChart');
