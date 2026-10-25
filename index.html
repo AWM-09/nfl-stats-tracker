@@ -468,7 +468,7 @@ function renderTeamStats(){
   else if(k==='offensive_yards_per_game')value=games?total('offensive_yards')/games:null;
   else if(k==='yards_allowed_per_game')value=games?total('yards_allowed')/games:null;
   else if(k==='point_differential')value=total('points_scored')-total('points_allowed');
-  else if(k==='yards_per_play')value=total('offensive_yards')/Math.max(1,total('offensive_yards')/Math.max(.001,rs.reduce((s,r)=>s+Number(r.yards_per_play||0),0)/rs.length));
+  else if(k==='yards_per_play')value=rs.reduce((s,r)=>s+Number(r.yards_per_play||0)*Number(r.offensive_plays||0),0)/Math.max(1,rs.reduce((s,r)=>s+Number(r.offensive_plays||0),0));
   else if(k==='third_down_pct')value=total('third_down_attempts')?100*total('third_down_conversions')/total('third_down_attempts'):null;
   else if(k==='third_down_pct_allowed')value=total('third_down_pct_allowed')/rs.length;
   else if(k==='red_zone_td_pct')value=total('red_zone_trips')?100*total('red_zone_tds')/total('red_zone_trips'):null;
