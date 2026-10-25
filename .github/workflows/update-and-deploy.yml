@@ -310,10 +310,12 @@ jobs:
           mkdir -p site/data
           cp index.html site/index.html
           cp advanced.html site/advanced.html
+          cp calendar.html site/calendar.html
           cp data/advanced_team_week_*.csv site/data/
           cp data/stats_player_week_*.csv site/data/
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
+          cp data/play_by_play_2026.csv site/data/play_by_play_2026.csv
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
