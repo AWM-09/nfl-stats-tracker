@@ -565,8 +565,7 @@ function setupTeamCompare(){
 }
 function refreshTeamWeeks(){const ws=[...new Set(raw.filter(r=>r.season===+$('teamCompareYear').value).map(r=>r.week))].sort((a,b)=>a-b);$('teamCompareWeeks').innerHTML=ws.map(w=>`<label><input type="checkbox" data-team-week value="${w}" checked>W${w}</label>`).join('')}
 function renderTeamCompare(){
- const chart=$('teamCompareChart'),message=$('teamCompareMessage');
- if(!$('teamStatSelect')){if(chart)chart.innerHTML='<div class="muted">Statistics controls have not loaded. Refresh the page.</div>';return;}
+ if(!$('teamStatSelect')){const chartEl=$('teamCompareChart');if(chartEl)chartEl.innerHTML='<div class="muted">Statistics controls have not loaded. Refresh the page.</div>';return;}
  const stats=[...selectedTeamCompareStats],year=+$('teamCompareYear').value,phase=$('teamComparePhase').value;
  const teams=[...selectedTeamCompareTeams],weeks=[...$('teamCompareWeeks').querySelectorAll('input:checked')].map(e=>+e.value);
  const es=teams.map(team=>({team,label:teamName(team),values:Object.fromEntries(stats.map(k=>[k,teamCompareValue(team,k,year,weeks,phase)]))}));
