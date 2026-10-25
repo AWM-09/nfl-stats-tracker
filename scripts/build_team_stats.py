@@ -35,10 +35,15 @@ for year in YEARS:
    d=tg[(key,off)]; pt=(r.get("play_type") or "").lower(); y=n(r.get("yards_gained"))
    if pt in ("pass","run","qb_kneel","qb_spike"):
     d["plays"]+=1;d["yards"]+=y
-    if y>=20:d["explosive"]+=1
-    d["longest"]=max(d["longest"],y)
-    if yes(r.get("touchdown")):d["long_td"]=max(d["long_td"],y)
-    else:d["long_non_td"]=max(d["long_non_td"],y)
+    # A single NFL play cannot gain more than 100 yards. Keep impossible
+    # source values out of the big-play metrics rather than displaying them
+    # as legitimate records (or silently clamping them to 100).
+    valid_play_yards = 0 <= y <= 100
+    if valid_play_yards:
+     if y>=20:d["explosive"]+=1
+     d["longest"]=max(d["longest"],y)
+     if yes(r.get("touchdown")):d["long_td"]=max(d["long_td"],y)
+     else:d["long_non_td"]=max(d["long_non_td"],y)
    if str(r.get("down") or "")=="3":
     d["third_att"]+=1
     if yes(r.get("first_down")) or yes(r.get("touchdown")):d["third_conv"]+=1
