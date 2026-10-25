@@ -298,6 +298,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/build_team_stats.py
+          python3 scripts/build_advanced_stats.py
           for year in 2020 2021 2022 2023 2024 2025 2026; do
             test -s "data/stats_team_week_${year}.csv"
           done
@@ -307,6 +308,8 @@ jobs:
           set -euo pipefail
           mkdir -p site/data
           cp index.html site/index.html
+          cp advanced.html site/advanced.html
+          cp data/advanced_team_week_*.csv site/data/
           cp data/stats_player_week_*.csv site/data/
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
