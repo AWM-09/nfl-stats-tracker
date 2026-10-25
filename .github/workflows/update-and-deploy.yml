@@ -316,6 +316,19 @@ jobs:
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
           cp data/play_by_play_2026.csv site/data/play_by_play_2026.csv
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("site/index.html")
+          html = path.read_text(encoding="utf-8")
+          old_tab = '<button class="tab" data-view="calendar">NFL Calendar</button>'
+          new_tab = '<a class="tab" href="./calendar.html">NFL Calendar &amp; Predictor ↗</a>'
+          if old_tab in html:
+              html = html.replace(old_tab, new_tab, 1)
+              path.write_text(html, encoding="utf-8")
+              print("Linked main tracker to the new calendar and predictor.")
+          else:
+              print("Calendar tab text was not found; leaving index.html unchanged.")
+          PY
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
