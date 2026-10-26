@@ -506,8 +506,8 @@ async function renderPlayerCompare(){
  if(!raw.length)return;
  const stats=[...selectedPlayerCompareStats];
  const years=[...new Set(Array.from({length:comparisonCount},(_,j)=>+$(`p${j+1}year`)?.value||2020))];
- $('comparisonNotice').textContent='Loading comparison data…';
- try{await Promise.all(years.map(ensureComparisonYear))}catch(err){$('comparisonNotice').textContent='Could not load historical comparison data: '+err.message;return}
+ $('comparisonMessage').textContent='Loading comparison data…';
+ try{await Promise.all(years.map(ensureComparisonYear))}catch(err){$('comparisonMessage').textContent='Could not load historical comparison data: '+err.message;return}
  const es=[];
  for(let i=1;i<=comparisonCount;i++){
   const player=$(`p${i}name`)?.value.trim()||'',year=+$ (`p${i}year`)?.value||2020,phase=$(`p${i}phase`)?.value||'REG',weeks=[...document.querySelectorAll(`[data-card="${i}"] input[data-field="weeks"]:checked`)].map(e=>+e.value);
