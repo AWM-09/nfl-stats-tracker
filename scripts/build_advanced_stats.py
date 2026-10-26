@@ -10,7 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path("data")
-YEARS = range(2010, 2027)
+YEARS = range(2000, 2027)
 FIELDS = [
     "season", "week", "season_type", "team", "plays", "pass_plays", "run_plays",
     "yards", "epa", "successes", "success_rate", "explosive_plays", "explosive_rate",
