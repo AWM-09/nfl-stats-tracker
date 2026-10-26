@@ -50,7 +50,7 @@ jobs:
             return 1
           }
 
-          for year in 2020 2021 2022 2023 2024 2026; do
+          for year in 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2026; do
             echo "Downloading weekly player statistics for ${year}"
             download_asset "$year" "stats_player_week_${year}.csv" || {
               echo "::error::Could not find the weekly player-stat CSV for ${year}."
@@ -98,7 +98,7 @@ jobs:
             rm -f "$reg" "$post"
           fi
 
-          for year in 2020 2021 2022 2023 2024 2025 2026; do
+          for year in 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
             test -s "data/stats_player_week_${year}.csv"
             head -n 1 "data/stats_player_week_${year}.csv" | grep -qi 'week'
           done
@@ -281,7 +281,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p data
-          for year in 2020 2021 2022 2023 2024 2025 2026; do
+          for year in 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
             output="data/play_by_play_${year}.csv"
             url="https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${year}.csv"
             if ! curl --silent --show-error --fail --location --retry 3 "$url" --output "$output.tmp"; then
@@ -299,7 +299,7 @@ jobs:
           set -euo pipefail
           python3 scripts/build_team_stats.py
           python3 scripts/build_advanced_stats.py
-          for year in 2020 2021 2022 2023 2024 2025 2026; do
+          for year in 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
             test -s "data/stats_team_week_${year}.csv"
             test -s "data/advanced_team_week_${year}.csv"
           done
