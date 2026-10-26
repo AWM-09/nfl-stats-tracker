@@ -4,7 +4,7 @@ import csv, math
 from collections import defaultdict
 from pathlib import Path
 ROOT=Path("data")
-YEARS=range(2010,2027)
+YEARS=range(2000,2027)
 FIELDS=["season","week","season_type","team","games_played","points_scored","points_allowed","points_scored_per_game","points_allowed_per_game","point_differential","offensive_yards","offensive_plays","offensive_yards_per_game","yards_allowed","yards_allowed_per_game","yards_per_play","turnover_differential","third_down_conversions","third_down_attempts","third_down_pct","third_down_pct_allowed","fourth_down_conversions","fourth_down_attempts","fourth_down_pct","fourth_down_attempts_allowed","fourth_down_stops","red_zone_tds","red_zone_trips","red_zone_td_pct","red_zone_tds_allowed","red_zone_trips_allowed","red_zone_td_pct_allowed","offensive_red_zone_turnovers","defensive_red_zone_turnovers","time_of_possession_seconds","penalties","penalty_yards","explosive_plays_20_plus","longest_play_td","longest_play_non_td","longest_play"]
 def n(v):
  try:return float(v) if v not in ("",None) else 0.
