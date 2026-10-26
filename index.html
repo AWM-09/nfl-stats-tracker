@@ -631,6 +631,19 @@ async function loadData(){
  }finally{$('refreshBtn').disabled=false;render()}
 }
 function scheduleField(r,keys){return first(r,keys)}
+function scheduleDateTime(g){
+ const raw=String(first(g,['gameday','game_date','date','start_date','kickoff_date'])||'').trim();
+ if(!raw)return null;
+ const clock=String(first(g,['gametime','game_time','kickoff_time','start_time'])||'').trim();
+ let iso=raw;
+ if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+  const time=clock&&clock!=='NA'&&clock!=='TBD'?clock:'12:00';
+  iso=raw+'T'+time;
+  if(!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso))iso+='Z';
+ }
+ const d=new Date(iso);
+ return Number.isNaN(d.getTime())?null:d;
+}
 function renderCalendar(){
  const yr=+$('calendarYear').value||2026, wk=$('calendarWeek').value, team=$('calendarTeam').value, tz=$('calendarTimezone').value;
  let games=scheduleRows.filter(g=>num(scheduleField(g,['season','year']))===yr);
