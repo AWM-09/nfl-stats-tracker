@@ -312,6 +312,7 @@ jobs:
           cp advanced.html site/advanced.html
           cp calendar.html site/calendar.html
           cp accuracy.html site/accuracy.html
+          cp playbook.html site/playbook.html
           cp data/advanced_team_week_*.csv site/data/
           cp data/stats_player_week_*.csv site/data/
           cp data/stats_team_week_*.csv site/data/
