@@ -124,10 +124,14 @@ for year in YEARS:
     # Build opponent-allowed metrics by joining each offense's weekly totals to
     # the opposing team's same-game aggregate. Team names are keyed to the game.
     by_game_offense = defaultdict(dict)
-    for (season, week, st, team), d in team_week.items():
-        for game_key, teams in game_teams.items():
-            if game_key[:3] == (season, week, st) and team in teams:
-                by_game_offense[game_key][team] = d
+    # Join team-week aggregates to games directly by the game key's season/week/type.
+    # This replaces an O(team-weeks × games) scan with a small per-game lookup.
+    for game_key, teams in game_teams.items():
+        season, week, st = game_key[:3]
+        for team in teams:
+            offense = team_week.get((season, week, st, team))
+            if offense is not None:
+                by_game_offense[game_key][team] = offense
     for game_key, offenses in by_game_offense.items():
         teams = list(offenses)
         if len(teams) != 2:
