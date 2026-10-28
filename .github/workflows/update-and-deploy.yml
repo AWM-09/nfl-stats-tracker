@@ -376,6 +376,8 @@ jobs:
           set -euo pipefail
           mkdir -p site/data
           cp index.html site/index.html
+          cp favicon.svg site/favicon.svg
+          test -s site/favicon.svg
           cp advanced.html site/advanced.html
           cp calendar.html site/calendar.html
           cp accuracy.html site/accuracy.html
