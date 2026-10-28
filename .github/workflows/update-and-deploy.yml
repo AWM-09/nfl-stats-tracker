@@ -314,6 +314,7 @@ jobs:
           cp accuracy.html site/accuracy.html
           cp news.html site/news.html
           cp playbook.html site/playbook.html
+          cp rulebook.html site/rulebook.html
           cp data/advanced_team_week_*.csv site/data/
           cp data/stats_player_week_*.csv site/data/
           cp data/stats_team_week_*.csv site/data/
