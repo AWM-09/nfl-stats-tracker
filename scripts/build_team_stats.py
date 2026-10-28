@@ -92,8 +92,12 @@ for year in YEARS:
  out=ROOT/f"stats_team_week_{year}.csv"
  with out.open("w",newline="",encoding="utf-8") as f:
   wr=csv.DictWriter(f,fieldnames=FIELDS);wr.writeheader()
+  games_by_team_week=defaultdict(list)
+  for game_key in games:
+   for team in teams_by_game.get(game_key,set()):
+    games_by_team_week[(game_key[0],game_key[1],game_key[2],team)].append(game_key)
   for (season,week,st,team),b in sorted(buckets.items()):
-   gkeys=[k for k in games if k[0]==season and k[1]==week and k[2]==st and team in teams_by_game.get(k,set())]
+   gkeys=games_by_team_week.get((season,week,st,team),[])
    played=len(gkeys)
    if not played:continue
    scored=allowed=0
