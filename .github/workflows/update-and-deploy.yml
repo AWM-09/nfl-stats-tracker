@@ -336,6 +336,73 @@ jobs:
               print("Calendar tab text was not found; leaving index.html unchanged.")
           PY
 
+      - name: Validate inline JavaScript before deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess
+          import tempfile
+
+          class InlineScriptParser(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=False)
+                  self.scripts = []
+                  self.current = None
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() != "script":
+                      return
+                  attributes = dict(attrs)
+                  if "src" in attributes:
+                      self.current = None
+                      return
+                  kind = (attributes.get("type") or "").strip().lower()
+                  if kind not in ("", "text/javascript", "application/javascript", "module"):
+                      self.current = None
+                      return
+                  self.current = {"type": kind, "parts": []}
+
+              def handle_data(self, data):
+                  if self.current is not None:
+                      self.current["parts"].append(data)
+
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.current is not None:
+                      self.scripts.append(self.current)
+                      self.current = None
+
+          pages = sorted(Path("site").glob("*.html"))
+          if not pages:
+              raise SystemExit("No HTML pages found in site/; refusing to deploy an empty site.")
+
+          checked = 0
+          with tempfile.TemporaryDirectory() as temp_dir:
+              for page in pages:
+                  parser = InlineScriptParser()
+                  parser.feed(page.read_text(encoding="utf-8"))
+                  for index, script in enumerate(parser.scripts, start=1):
+                      source = "".join(script["parts"])
+                      if not source.strip():
+                          continue
+                      suffix = ".mjs" if script["type"] == "module" else ".js"
+                      target = Path(temp_dir) / f"{page.stem}-{index}{suffix}"
+                      target.write_text(source, encoding="utf-8")
+                      result = subprocess.run(
+                          ["node", "--check", str(target)],
+                          capture_output=True, text=True
+                      )
+                      if result.returncode:
+                          print(f"JavaScript syntax error: {page} inline script #{index}")
+                          print(result.stderr)
+                          raise SystemExit(result.returncode)
+                      checked += 1
+
+          print(f"JavaScript syntax validation passed: {checked} inline script block(s) across {len(pages)} page(s).")
+          PY
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
