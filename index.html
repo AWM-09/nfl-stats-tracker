@@ -667,7 +667,7 @@ function renderCalendar(){
   return `<article class="game-row"><div><div class="game-time">${esc(time)}</div><div class="game-meta">Week ${esc(scheduleField(g,['week'])||'—')} · ${esc(phase)}</div></div><div class="game-matchup"><div class="game-team"><span>${esc(away)}</span><span class="game-score">${hasScore?esc(as):'—'}</span></div><div class="game-team"><span>${esc(home)}</span><span class="game-score">${hasScore?esc(hs):'—'}</span></div></div><div class="game-status ${hasScore?'final':''}">${status}</div></article>`;
  }).join('');
 }
-async function loadSchedule(){
+async async function loadSchedule(){
  try{
   const res=await fetch(`./data/schedule.csv?v=${Date.now()}`,{cache:'no-store'});
   if(!res.ok)throw Error(`HTTP ${res.status}`);
