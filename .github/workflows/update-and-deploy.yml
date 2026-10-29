@@ -94,6 +94,9 @@ jobs:
       - name: Test NFL Records calculations
         run: node scripts/test_records.js
 
+      - name: Test NFL Research Lab calculations
+        run: node scripts/test_research.js
+
       - name: Download weekly player stats for 2000–2026 (regular season and playoffs)
         shell: bash
         run: |
@@ -379,6 +382,8 @@ jobs:
           set -euo pipefail
           mkdir -p site/data
           cp index.html site/index.html
+          cp research.html site/research.html
+          test -s site/research.html
           cp favicon.svg site/favicon.svg
           test -s site/favicon.svg
           cp advanced.html site/advanced.html
@@ -392,7 +397,8 @@ jobs:
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
           for year in 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
-            cp "data/play_by_play_${year}.csv" "site/data/play_by_play_${year}.csv"
+            gzip -c "data/play_by_play_${year}.csv" > "site/data/play_by_play_${year}.csv.gz"
+            test -s "site/data/play_by_play_${year}.csv.gz"
           done
           python3 - <<'PY'
           from pathlib import Path
@@ -406,6 +412,27 @@ jobs:
               print("Linked main tracker to the new calendar and predictor.")
           else:
               print("Calendar tab text was not found; leaving index.html unchanged.")
+          PY
+
+      - name: Generate build metadata
+        env:
+          BUILD_COMMIT: ${{ github.sha }}
+          BUILD_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          info = {
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "commit": os.environ.get("BUILD_COMMIT", ""),
+              "workflow_run_id": os.environ.get("BUILD_RUN_ID", ""),
+              "data_seasons": "2000–2026",
+              "source": "nflverse weekly player statistics, schedule and play-by-play-derived summaries",
+              "play_by_play_delivery": "gzip-compressed static CSV files"
+          }
+          Path("site/build-info.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
+          print("Wrote build metadata for commit", info["commit"])
           PY
 
       - name: Configure GitHub Pages
