@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const html = fs.readFileSync('index.html', 'utf8');
+assert.ok(html.includes("./data/records-index.json"), 'Records page should load its precomputed index.');
 const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
  .find(item => item[1].includes('function recordAggregateValue') && item[1].includes('function metricValue'));
 assert.ok(match, 'Could not extract main dashboard script.');
