@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const root = process.cwd();
 const dataDir = path.join(root, 'data');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const match = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)]
+const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
   .find(item => item[1].includes('function recordAggregateValue') &&
                 item[1].includes('function metricValue'));
 
@@ -16,9 +16,9 @@ if (!match) {
 }
 
 // Reuse the dashboard's tested calculations so the fast index and the browser
-// fallback share the same metric definitions and aggregation rules.
-const source = match[1].replace(/\\ninit\\(\\);\\s*$/, '\\n') +
-  '\\nglobalThis.__buildRecordsIndex = buildRecordsIndex;\\n';
+// share the same metric definitions and aggregation rules.
+const source = match[1].replace(/\ninit\(\);\s*$/, '\n') +
+  '\nglobalThis.__buildRecordsIndex = buildRecordsIndex;\n';
 
 const documentStub = {
   getElementById() {
@@ -28,7 +28,7 @@ const documentStub = {
 };
 
 async function localDataFetch(url) {
-  const fileMatch = String(url).match(/stats_player_week_(\\d{4})\\.csv/);
+  const fileMatch = String(url).match(/stats_player_week_(\d{4})\.csv/);
   if (!fileMatch) return { ok: false, status: 404, async text() { return ''; } };
 
   try {
