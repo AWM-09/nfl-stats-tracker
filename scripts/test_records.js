@@ -90,4 +90,18 @@ test('zero placeholders are excluded from most-volume records', () => {
  assert.equal(index.season.REG.passing_yards.length,1);
  assert.equal(index.season.REG.passing_yards[0].player,'Passer');
 });
+test('untracked drop data is not converted to a zero-percent record', () => {
+ assert.equal(sandbox.metricValue(row({targets:'20'}),'receiving_drop_pct'),null);
+ assert.equal(sandbox.recordAggregateValue([row({targets:'20'})],'receiving_drop_pct','season'),null);
+ near(sandbox.metricValue(row({targets:'20',receiving_drops:'2'}),'receiving_drop_pct'),10,'Drop percentage with source data');
+});
+test('missing historical air-yard rows do not dilute aDOT', () => {
+ const rows=[row({targets:'10',receiving_air_yards:''}),row({week:2,targets:'10',receiving_air_yards:'70'})];
+ near(sandbox.recordAggregateValue(rows,'average_depth_of_target','season'),7,'aDOT with partial source coverage');
+ const bucket=sandbox.newCareerBucket([rows[0]]);
+ sandbox.addCareerSeason(bucket,[rows[0]],2009);
+ sandbox.addCareerSeason(bucket,[rows[1]],2025);
+ near(sandbox.careerRecordValue(bucket,'average_depth_of_target'),7,'Career aDOT with partial source coverage');
+ assert.deepEqual([...bucket.metricYears.average_depth_of_target],[2025]);
+});
 console.log('Record calculation tests passed.');

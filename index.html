@@ -269,30 +269,30 @@ function metricValue(r,k){const m=metrics[k];if(m.max){const v=first(r,m.cols||[
  if(m.derived){
  const att=num(r.attempts),cmp=num(r.completions),py=num(r.passing_yards),ptd=num(r.passing_tds),ints=num(r.passing_interceptions);
  const carries=num(first(r,['carries','rushing_attempts'])),ry=num(r.rushing_yards),rec=num(r.receptions),targets=num(r.targets),recy=num(r.receiving_yards);
- if(k==='pass_yards_per_attempt')return att?py/att:null;
- if(k==='pass_td_pct')return att?100*ptd/att:null;
- if(k==='pass_int_pct')return att?100*ints/att:null;
- if(k==='td_int_ratio')return ints?ptd/ints:null;
- if(k==='rushing_yards_per_carry')return carries?ry/carries:null;
- if(k==='receiving_yards_per_catch')return rec?recy/rec:null;
- if(k==='receiving_yards_per_target')return targets?recy/targets:null;
- if(k==='receiving_drop_pct'){const drops=num(first(r,['receiving_drops','drops']));return targets?100*drops/targets:null;}
- if(k==='average_depth_of_target'){const air=num(first(r,['receiving_air_yards','air_yards']));return targets?air/targets:null;}
- if(k==='punting_avg'){const attempts=num(first(r,['pt_att','punts','punts_attempted'])),yards=num(first(r,['pt_yards','punt_yards']));return attempts?yards/attempts:null;}
- if(k==='punting_net_avg'){const attempts=num(first(r,['pt_att','punts','punts_attempted'])),yards=num(first(r,['pt_net_yards','punt_net_yards']));return attempts?yards/attempts:null;}
- if(k==='kick_return_avg'){const attempts=num(first(r,['kickoff_returns','kick_returns'])),yards=num(first(r,['kickoff_return_yards','kick_return_yards','kick_ret_yards']));return attempts?yards/attempts:null;}
- if(k==='punt_return_avg'){const attempts=num(first(r,['punt_returns','pt_returned'])),yards=num(first(r,['punt_return_yards','pt_return_yards','punt_ret_yards']));return attempts?yards/attempts:null;}
- if(k==='fg_pct'){const made=num(first(r,['fg_made','field_goals_made'])),att=num(first(r,['fg_att','fg_attempts']));return att?100*made/att:null;}
- if(k==='pat_pct'){const made=num(first(r,['pat_made','extra_points_made'])),att=num(first(r,['pat_att','pat_attempts']));return att?100*made/att:null;}
- if(k==='catch_rate')return targets?100*rec/targets:null;
- if(k==='yards_from_scrimmage')return (hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?ry+recy:null;
- if(k==='total_touchdowns')return (hasCol(r,['rushing_tds'])||hasCol(r,['receiving_tds'])||hasCol(r,['passing_tds']))?num(r.rushing_tds)+num(r.receiving_tds)+ptd:null;
- if(k==='total_offensive_yards')return (hasCol(r,['passing_yards'])||hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?py+ry+recy:null;
- if(k==='total_tackles')return (hasCol(r,['def_tackles_solo','solo_tackles'])||hasCol(r,['def_tackle_assists','assisted_tackles','def_tackles_with_assist']))?num(first(r,['def_tackles_solo','solo_tackles']))+num(first(r,['def_tackle_assists','assisted_tackles','def_tackles_with_assist'])):null;
- if(k==='defensive_impact_plays')return (hasCol(r,['def_sacks'])||hasCol(r,['def_interceptions'])||hasCol(r,['def_fumbles_forced','def_forced_fumbles','forced_fumbles']))?num(r.def_sacks)+num(r.def_interceptions)+num(first(r,['def_fumbles_forced','def_forced_fumbles','forced_fumbles'])):null;
+ if(k==='pass_yards_per_attempt')return att&&hasCol(r,['passing_yards'])?py/att:null;
+ if(k==='pass_td_pct')return att&&hasCol(r,['passing_tds'])?100*ptd/att:null;
+ if(k==='pass_int_pct')return att&&hasCol(r,['passing_interceptions','interceptions'])?100*ints/att:null;
+ if(k==='td_int_ratio')return ints&&hasCol(r,['passing_tds'])&&hasCol(r,['passing_interceptions','interceptions'])?ptd/ints:null;
+ if(k==='rushing_yards_per_carry')return carries&&hasCol(r,['rushing_yards'])?ry/carries:null;
+ if(k==='receiving_yards_per_catch')return rec&&hasCol(r,['receiving_yards'])?recy/rec:null;
+ if(k==='receiving_yards_per_target')return targets&&hasCol(r,['receiving_yards'])?recy/targets:null;
+ if(k==='receiving_drop_pct'){const rawDrops=first(r,['receiving_drops','drops']);if(rawDrops===''||!targets)return null;const drops=Number(rawDrops);return Number.isFinite(drops)?100*drops/targets:null;}
+ if(k==='average_depth_of_target'){const rawAir=first(r,['receiving_air_yards','air_yards']);if(rawAir===''||!targets)return null;const air=Number(rawAir);return Number.isFinite(air)?air/targets:null;}
+ if(k==='punting_avg'){const rawAttempts=first(r,['pt_att','punts','punts_attempted']),rawYards=first(r,['pt_yards','punt_yards']);if(rawAttempts===''||rawYards==='')return null;const attempts=Number(rawAttempts),yards=Number(rawYards);return Number.isFinite(attempts)&&Number.isFinite(yards)&&attempts>0?yards/attempts:null;}
+ if(k==='punting_net_avg'){const rawAttempts=first(r,['pt_att','punts','punts_attempted']),rawYards=first(r,['pt_net_yards','punt_net_yards']);if(rawAttempts===''||rawYards==='')return null;const attempts=Number(rawAttempts),yards=Number(rawYards);return Number.isFinite(attempts)&&Number.isFinite(yards)&&attempts>0?yards/attempts:null;}
+ if(k==='kick_return_avg'){const rawAttempts=first(r,['kickoff_returns','kick_returns']),rawYards=first(r,['kickoff_return_yards','kick_return_yards','kick_ret_yards']);if(rawAttempts===''||rawYards==='')return null;const attempts=Number(rawAttempts),yards=Number(rawYards);return Number.isFinite(attempts)&&Number.isFinite(yards)&&attempts>0?yards/attempts:null;}
+ if(k==='punt_return_avg'){const rawAttempts=first(r,['punt_returns','pt_returned']),rawYards=first(r,['punt_return_yards','pt_return_yards','punt_ret_yards']);if(rawAttempts===''||rawYards==='')return null;const attempts=Number(rawAttempts),yards=Number(rawYards);return Number.isFinite(attempts)&&Number.isFinite(yards)&&attempts>0?yards/attempts:null;}
+ if(k==='fg_pct'){const rawMade=first(r,['fg_made','field_goals_made']),rawAtt=first(r,['fg_att','fg_attempts']);if(rawMade===''||rawAtt==='')return null;const made=Number(rawMade),att=Number(rawAtt);return Number.isFinite(made)&&Number.isFinite(att)&&att>0?100*made/att:null;}
+ if(k==='pat_pct'){const rawMade=first(r,['pat_made','extra_points_made']),rawAtt=first(r,['pat_att','pat_attempts']);if(rawMade===''||rawAtt==='')return null;const made=Number(rawMade),att=Number(rawAtt);return Number.isFinite(made)&&Number.isFinite(att)&&att>0?100*made/att:null;}
+ if(k==='catch_rate')return targets&&hasCol(r,['receptions'])?100*rec/targets:null;
+ if(k==='yards_from_scrimmage')return hasCol(r,['rushing_yards'])&&hasCol(r,['receiving_yards'])?ry+recy:null;
+ if(k==='total_touchdowns')return hasCol(r,['rushing_tds'])&&hasCol(r,['receiving_tds'])&&hasCol(r,['passing_tds'])?num(r.rushing_tds)+num(r.receiving_tds)+ptd:null;
+ if(k==='total_offensive_yards')return hasCol(r,['passing_yards'])&&hasCol(r,['rushing_yards'])&&hasCol(r,['receiving_yards'])?py+ry+recy:null;
+ if(k==='total_tackles')return hasCol(r,['def_tackles_solo','solo_tackles'])&&hasCol(r,['def_tackle_assists','assisted_tackles','def_tackles_with_assist'])?num(first(r,['def_tackles_solo','solo_tackles']))+num(first(r,['def_tackle_assists','assisted_tackles','def_tackles_with_assist'])):null;
+ if(k==='defensive_impact_plays')return hasCol(r,['def_sacks'])&&hasCol(r,['def_interceptions'])&&hasCol(r,['def_fumbles_forced','def_forced_fumbles','forced_fumbles'])?num(r.def_sacks)+num(r.def_interceptions)+num(first(r,['def_fumbles_forced','def_forced_fumbles','forced_fumbles'])):null;
  if(k==='standard_fantasy_points'){const source=first(r,['fantasy_points']);if(source!==''){const exact=Number(source);if(Number.isFinite(exact))return exact;}return (hasCol(r,['passing_yards'])||hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?py/25+ptd*4-ints*2+ry/10+num(r.rushing_tds)*6+recy/10+num(r.receiving_tds)*6:null;}
  }
- if(m.rate){const a=num(r.attempts);return a?100*num(r.completions)/a:null}if(m.rating)return passerRating(r);if(k==='fumbles_recovered'){if(!hasCol(r,['fumbles_total','fumbles_lost_total']))return null;return Math.max(0,num(r.fumbles_total)-num(r.fumbles_lost_total))}if(k==='def_fumble_recoveries'){const direct=first(r,['def_fumble_recoveries','fumble_recoveries','def_fumble_recovery']);if(direct!==''){const value=Number(direct);return Number.isFinite(value)?value:null;}const own=first(r,['fumble_recovery_own','def_fumble_recovery_own']),opp=first(r,['fumble_recovery_opp']);if(own===''&&opp==='')return null;return (own===''?0:num(own))+(opp===''?0:num(opp));}if(!hasCol(r,m.cols||[]))return null;const v=first(r,m.cols||[]);if(v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
+ if(m.rate){const a=num(r.attempts);return a?100*num(r.completions)/a:null}if(m.rating)return passerRating(r);if(k==='fumbles_recovered'){if(!hasCol(r,['fumbles_total'])||!hasCol(r,['fumbles_lost_total']))return null;return Math.max(0,num(r.fumbles_total)-num(r.fumbles_lost_total))}if(k==='def_fumble_recoveries'){const direct=first(r,['def_fumble_recoveries','fumble_recoveries','def_fumble_recovery']);if(direct!==''){const value=Number(direct);return Number.isFinite(value)?value:null;}const own=first(r,['fumble_recovery_own','def_fumble_recovery_own']),opp=first(r,['fumble_recovery_opp']);if(own===''||opp==='')return null;return num(own)+num(opp);}if(!hasCol(r,m.cols||[]))return null;const v=first(r,m.cols||[]);if(v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
 function fmt(v,k){if(v===null||v===undefined||!Number.isFinite(Number(v)))return'—';if(['completion_pct','pass_td_pct','pass_int_pct','catch_rate','receiving_drop_pct','fg_pct','pat_pct'].includes(k))return Number(v).toFixed(1)+'%';if(k==='average_time_to_throw')return Number(v).toFixed(2)+' s';if(['passer_rating','passing_epa','pass_yards_per_attempt','rushing_yards_per_carry','receiving_yards_per_catch','receiving_yards_per_target','td_int_ratio'].includes(k))return Number(v).toFixed(1);return Number(v).toLocaleString(undefined,{maximumFractionDigits:1})}
 function availableWeeks(){return [...new Set(seasonRows().map(r=>r.week).filter(w=>w>=1&&w<=22))].sort((a,b)=>a-b)}
 function buildTeams(){const sel=$('team'),old=sel.value;sel.innerHTML='<option value="">All teams</option>';[...new Set(seasonRows().map(r=>r.team).filter(Boolean))].sort().forEach(t=>sel.add(new Option(teamName(t),t)));sel.value=[...sel.options].some(o=>o.value===old)?old:''}
@@ -833,6 +833,42 @@ function weightedRecordAverage(rows,stat){
  });
  return totalWeight?weightedTotal/totalWeight:null;
 }
+const RECORD_RATIO_REQUIRED_FIELDS={
+ completion_pct:[['completions'],['attempts']],
+ passer_rating:[['completions'],['attempts'],['passing_yards'],['passing_tds'],['passing_interceptions','interceptions']],
+ pass_yards_per_attempt:[['passing_yards'],['attempts']],
+ pass_td_pct:[['passing_tds'],['attempts']],
+ pass_int_pct:[['passing_interceptions','interceptions'],['attempts']],
+ td_int_ratio:[['passing_tds'],['passing_interceptions','interceptions'],['attempts']],
+ rushing_yards_per_carry:[['rushing_yards'],['carries','rushing_attempts']],
+ receiving_yards_per_catch:[['receiving_yards'],['receptions']],
+ receiving_yards_per_target:[['receiving_yards'],['targets']],
+ receiving_drop_pct:[['receiving_drops','drops'],['targets']],
+ fg_pct:[['fg_made','field_goals_made'],['fg_att','fg_attempts']],
+ pat_pct:[['pat_made','extra_points_made'],['pat_att','pat_attempts']],
+ catch_rate:[['receptions'],['targets']],
+ average_depth_of_target:[['receiving_air_yards','air_yards'],['targets']],
+ punting_avg:[['pt_yards','punt_yards'],['pt_att','punts','punts_attempted']],
+ punting_net_avg:[['pt_net_yards','punt_net_yards'],['pt_att','punts','punts_attempted']],
+ kick_return_avg:[['kickoff_return_yards','kick_return_yards','kick_ret_yards'],['kickoff_returns','kick_returns']],
+ punt_return_avg:[['punt_return_yards','pt_return_yards','punt_ret_yards'],['punt_returns','pt_returned']]
+};
+function recordFieldsComplete(row,groups){return groups.every(group=>hasCol(row,group))}
+function rowsWithRecordMetricData(rows,stat){
+ const required=RECORD_RATIO_REQUIRED_FIELDS[stat];
+ if(required)return rows.filter(row=>recordFieldsComplete(row,required));
+ const meta=metrics[stat];
+ if(meta&&meta.average){
+  return rows.filter(row=>{
+   const value=metricValue(row,stat);
+   return value!==null&&value!==undefined&&Number.isFinite(Number(value))&&(recordAverageWeight(row,stat)!==null||stat==='def_pressure_rate');
+  });
+ }
+ return rows.filter(row=>{
+  const value=metricValue(row,stat);
+  return value!==null&&value!==undefined&&Number.isFinite(Number(value));
+ });
+}
 function createRecordsIndex(){
  const index={};
  ['weekly','season','career'].forEach(mode=>{
@@ -855,6 +891,7 @@ function aggregateRecordColumns(rows){
  return totals;
 }
 function recordAggregateValue(rows,stat,mode){
+ rows=rowsWithRecordMetricData(rows,stat);
  if(!rows.length||!metrics[stat])return null;
  const meta=metrics[stat];
  if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
@@ -900,11 +937,12 @@ function addTopRecord(index,mode,phase,stat,entry){
  if(list.length>100)list.length=100;
 }
 function createRecordEntry(rows,year,mode,stat,phase){
- const value=recordAggregateValue(rows,stat,mode);
+ const metricRows=rowsWithRecordMetricData(rows,stat);
+ const value=recordAggregateValue(metricRows,stat,mode);
  if(value===null)return null;
  const player=rows[0].player||'Unknown player';
- const teams=[...new Set(rows.map(row=>teamName(row.team)).filter(team=>team&&team!=='—'))];
- const weekKeys=[...new Set(rows.map(row=>String(row.week)+'|'+String(row.season_type)))];
+ const teams=[...new Set(metricRows.map(row=>teamName(row.team)).filter(team=>team&&team!=='—'))];
+ const weekKeys=[...new Set(metricRows.map(row=>String(row.week)+'|'+String(row.season_type)))];
  let scope='';
  if(mode==='weekly'){
   const actualPhase=phase==='ALL'?(rows.some(row=>phaseMatches(row,'POST'))?'POST':'REG'):phase;
@@ -915,7 +953,7 @@ function createRecordEntry(rows,year,mode,stat,phase){
  return {player:player,team:teams.join(', ')||'—',value:Number(value),scope:scope,year:year,week:mode==='weekly'?Number(rows[0].week):null,weeks:weekKeys.length,seasons:1};
 }
 function newCareerBucket(rows){
- return {player:rows[0].player||'Unknown player',rawTotals:{},sums:{},sumCounts:{},weightedAverageSums:{},weightedAverageWeights:{},averageSums:{},averageCounts:{},maxValues:{},seasons:new Set(),weeks:new Set(),teams:new Set()};
+ return {player:rows[0].player||'Unknown player',rawTotals:{},ratioTotals:{},sums:{},sumCounts:{},weightedAverageSums:{},weightedAverageWeights:{},averageSums:{},averageCounts:{},maxValues:{},metricYears:{},metricWeeks:{},seasons:new Set(),weeks:new Set(),teams:new Set()};
 }
 function addCareerSeason(bucket,rows,year){
  if(!rows.length)return;
@@ -930,18 +968,44 @@ function addCareerSeason(bucket,rows,year){
   if(typeof value==='number'&&Number.isFinite(value))bucket.rawTotals[key]=(bucket.rawTotals[key]||0)+value;
   else if(bucket.rawTotals[key]===undefined)bucket.rawTotals[key]=value;
  });
+ function markCoverage(stat,validRows){
+  if(!bucket.metricYears[stat])bucket.metricYears[stat]=new Set();
+  if(!bucket.metricWeeks[stat])bucket.metricWeeks[stat]=new Set();
+  bucket.metricYears[stat].add(year);
+  validRows.forEach(row=>bucket.metricWeeks[stat].add(String(year)+'|'+String(row.week)+'|'+String(row.season_type)));
+ }
  Object.entries(metrics).forEach(([stat,meta])=>{
-  if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat)))return;
-  const values=rows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
-  if(!values.length)return;
+  const aggregateMetric=meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat));
+  if(aggregateMetric){
+   const validRows=rowsWithRecordMetricData(rows,stat);
+   if(!validRows.length)return;
+   const yearTotals=aggregateRecordColumns(validRows);
+   if(!bucket.ratioTotals[stat])bucket.ratioTotals[stat]={};
+   Object.entries(yearTotals).forEach(([key,value])=>{
+    if(typeof value==='number'&&Number.isFinite(value))bucket.ratioTotals[stat][key]=(bucket.ratioTotals[stat][key]||0)+value;
+    else if(bucket.ratioTotals[stat][key]===undefined)bucket.ratioTotals[stat][key]=value;
+   });
+   markCoverage(stat,validRows);
+   return;
+  }
   if(meta.average){
+   const validRows=[];
    rows.forEach(row=>{
     const value=metricValue(row,stat),weight=recordAverageWeight(row,stat);
     if(value===null||value===undefined||!Number.isFinite(Number(value))||weight===null)return;
     bucket.weightedAverageSums[stat]=(bucket.weightedAverageSums[stat]||0)+Number(value)*weight;
     bucket.weightedAverageWeights[stat]=(bucket.weightedAverageWeights[stat]||0)+weight;
+    validRows.push(row);
    });
-  }else if(meta.max){
+   if(validRows.length)markCoverage(stat,validRows);
+   return;
+  }
+  const validRows=rowsWithRecordMetricData(rows,stat);
+  if(!validRows.length)return;
+  const values=validRows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
+  if(!values.length)return;
+  markCoverage(stat,validRows);
+  if(meta.max){
    const maximum=Math.max(...values);
    bucket.maxValues[stat]=bucket.maxValues[stat]===undefined?maximum:Math.max(bucket.maxValues[stat],maximum);
   }else{
@@ -953,7 +1017,9 @@ function addCareerSeason(bucket,rows,year){
 function careerRecordValue(bucket,stat){
  const meta=metrics[stat];
  if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
-  const value=metricValue(bucket.rawTotals,stat);
+  const totals=bucket.ratioTotals[stat];
+  if(!totals)return null;
+  const value=metricValue(totals,stat);
   return value===null||value===undefined||!Number.isFinite(Number(value))?null:Number(value);
  }
  if(meta.average)return bucket.weightedAverageWeights[stat]?(bucket.weightedAverageSums[stat]||0)/bucket.weightedAverageWeights[stat]:null;
@@ -1005,19 +1071,19 @@ async function buildRecordsIndex(){
  if(!YEARS.some(year=>!skipped.includes(year)))throw new Error('No historical player-week seasons could be loaded.');
  for(const phase of ['ALL','REG','POST']){
   for(const bucket of careers[phase].values()){
-   const seasons=[...bucket.seasons].sort((a,b)=>a-b);
-   if(!seasons.length)continue;
    for(const stat of stats){
+    const seasons=[...(bucket.metricYears[stat]||new Set())].sort((a,b)=>a-b);
+    if(!seasons.length)continue;
     const value=careerRecordValue(bucket,stat);
     if(value===null||value===undefined||!Number.isFinite(Number(value)))continue;
     addTopRecord(index,'career',phase,stat,{
      player:bucket.player,
      team:[...bucket.teams].filter(Boolean).join(', ')||'—',
      value:Number(value),
-     scope:'Career · '+seasons[0]+'–'+seasons[seasons.length-1],
+     scope:'Career · '+seasons[0]+'–'+seasons[seasons.length-1]+' ('+seasons.length+' seasons with data)',
      year:seasons[seasons.length-1],
      week:null,
-     weeks:bucket.weeks.size,
+     weeks:(bucket.metricWeeks[stat]||new Set()).size,
      seasons:seasons.length
     });
    }
