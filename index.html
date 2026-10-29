@@ -1100,25 +1100,31 @@ function setupRecordsControls(){
  metric.value='passing_yards';
  ['recordsMetric','recordsMode','recordsPhase','recordsLimit'].forEach(id=>$(id).addEventListener('change',renderRecords));
 }
+async function loadPrecomputedRecordsIndex(){
+ const buildTag=document.querySelector('meta[name="nfl-stats-build"]')?.content||'records-v1';
+ const response=await fetch('./data/records-index.json?build='+encodeURIComponent(buildTag),{cache:'force-cache'});
+ if(!response.ok)throw new Error('HTTP '+response.status+' loading the precomputed index');
+ const payload=await response.json();
+ if(payload.version!==1||!payload.index)throw new Error('Invalid or outdated precomputed records index');
+ recordsIndex=payload.index;
+ recordsCoverageYears=Number(payload.loaded)||0;
+ recordsSkippedYears=Array.isArray(payload.skipped)?payload.skipped:[];
+}
 async function renderRecords(){
  const renderId=++recordsRenderSequence;
  const status=$('recordsStatus'),results=$('recordsResults');
- status.textContent=recordsIndex?'Updating records view…':'Preparing historical records…';
+ status.textContent=recordsIndex?'Updating records view…':'Loading precomputed records…';
  if(!recordsIndex){
   if(!recordsBuildPromise){
-   recordsBuildPromise=buildRecordsIndex().then(result=>{
-    recordsIndex=result.index;
-    recordsCoverageYears=result.loaded;
-    recordsSkippedYears=result.skipped;
-   }).catch(error=>{
+   recordsBuildPromise=loadPrecomputedRecordsIndex().catch(error=>{
     recordsBuildPromise=null;
     throw error;
    });
   }
   try{await recordsBuildPromise}catch(error){
    if(renderId!==recordsRenderSequence)return;
-   status.textContent='Could not build records: '+error.message;
-   results.innerHTML='<div class="notice">Historical records could not be loaded. Check that the player-week CSV files are published.</div>';
+   status.textContent='Could not load records: '+error.message;
+   results.innerHTML='<div class="notice">The precomputed records index could not be loaded. Try reloading the page; if the problem persists, the site build may need to be rerun.</div>';
    return;
   }
  }

@@ -325,6 +325,9 @@ jobs:
           print(f"Total matched rows: {total_matched}")
           PY
 
+      - name: Precompute Records index for fast browser loading
+        run: node scripts/build-records-index.js
+
       - name: Download NFL schedule and scores
         shell: bash
         run: |
@@ -394,6 +397,8 @@ jobs:
           cp rulebook.html site/rulebook.html
           cp data/advanced_team_week_*.csv site/data/
           cp data/stats_player_week_*.csv site/data/
+          cp data/records-index.json site/data/records-index.json
+          test -s site/data/records-index.json
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
           for year in 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
@@ -401,9 +406,18 @@ jobs:
             test -s "site/data/play_by_play_${year}.csv.gz"
           done
           python3 - <<'PY'
+          import os, re
           from pathlib import Path
           path = Path("site/index.html")
           html = path.read_text(encoding="utf-8")
+          build_id = os.environ.get("GITHUB_RUN_ID", "records-v1")
+          html, replaced = re.subn(
+              r'(<meta name="nfl-stats-build" content=")[^"]*(">)',
+              lambda match: match.group(1) + build_id + match.group(2),
+              html, count=1
+          )
+          if replaced != 1:
+              raise SystemExit("Could not version the dashboard build/cache key.")
           old_tab = '<button class="tab" data-view="calendar">NFL Calendar</button>'
           new_tab = '<a class="tab" href="./calendar.html">NFL Calendar &amp; Predictor ↗</a>'
           if old_tab in html:
