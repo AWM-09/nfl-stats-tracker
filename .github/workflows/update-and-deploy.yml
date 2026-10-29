@@ -91,6 +91,9 @@ jobs:
           print(f"JavaScript syntax validation passed: {checked} inline script block(s) across {len(pages)} page(s).")
           PY
 
+      - name: Test NFL Records calculations
+        run: node scripts/test_records.js
+
       - name: Download weekly player stats for 2000–2026 (regular season and playoffs)
         shell: bash
         run: |

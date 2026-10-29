@@ -272,11 +272,16 @@ function metricValue(r,k){const m=metrics[k];if(m.max){const v=first(r,m.cols||[
  if(k==='pass_yards_per_attempt')return att?py/att:null;
  if(k==='pass_td_pct')return att?100*ptd/att:null;
  if(k==='pass_int_pct')return att?100*ints/att:null;
- if(k==='td_int_ratio')return ints?ptd/ints:(ptd>0?ptd:null);
+ if(k==='td_int_ratio')return ints?ptd/ints:null;
  if(k==='rushing_yards_per_carry')return carries?ry/carries:null;
  if(k==='receiving_yards_per_catch')return rec?recy/rec:null;
  if(k==='receiving_yards_per_target')return targets?recy/targets:null;
  if(k==='receiving_drop_pct'){const drops=num(first(r,['receiving_drops','drops']));return targets?100*drops/targets:null;}
+ if(k==='average_depth_of_target'){const air=num(first(r,['receiving_air_yards','air_yards']));return targets?air/targets:null;}
+ if(k==='punting_avg'){const attempts=num(first(r,['pt_att','punts','punts_attempted'])),yards=num(first(r,['pt_yards','punt_yards']));return attempts?yards/attempts:null;}
+ if(k==='punting_net_avg'){const attempts=num(first(r,['pt_att','punts','punts_attempted'])),yards=num(first(r,['pt_net_yards','punt_net_yards']));return attempts?yards/attempts:null;}
+ if(k==='kick_return_avg'){const attempts=num(first(r,['kickoff_returns','kick_returns'])),yards=num(first(r,['kickoff_return_yards','kick_return_yards','kick_ret_yards']));return attempts?yards/attempts:null;}
+ if(k==='punt_return_avg'){const attempts=num(first(r,['punt_returns','pt_returned'])),yards=num(first(r,['punt_return_yards','pt_return_yards','punt_ret_yards']));return attempts?yards/attempts:null;}
  if(k==='fg_pct'){const made=num(first(r,['fg_made','field_goals_made'])),att=num(first(r,['fg_att','fg_attempts']));return att?100*made/att:null;}
  if(k==='pat_pct'){const made=num(first(r,['pat_made','extra_points_made'])),att=num(first(r,['pat_att','pat_attempts']));return att?100*made/att:null;}
  if(k==='catch_rate')return targets?100*rec/targets:null;
@@ -285,9 +290,9 @@ function metricValue(r,k){const m=metrics[k];if(m.max){const v=first(r,m.cols||[
  if(k==='total_offensive_yards')return (hasCol(r,['passing_yards'])||hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?py+ry+recy:null;
  if(k==='total_tackles')return (hasCol(r,['def_tackles_solo','solo_tackles'])||hasCol(r,['def_tackle_assists','assisted_tackles','def_tackles_with_assist']))?num(first(r,['def_tackles_solo','solo_tackles']))+num(first(r,['def_tackle_assists','assisted_tackles','def_tackles_with_assist'])):null;
  if(k==='defensive_impact_plays')return (hasCol(r,['def_sacks'])||hasCol(r,['def_interceptions'])||hasCol(r,['def_fumbles_forced','def_forced_fumbles','forced_fumbles']))?num(r.def_sacks)+num(r.def_interceptions)+num(first(r,['def_fumbles_forced','def_forced_fumbles','forced_fumbles'])):null;
- if(k==='standard_fantasy_points')return (hasCol(r,['passing_yards'])||hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?py/25+ptd*4-ints*2+ry/10+num(r.rushing_tds)*6+recy/10+rec*0.5+num(r.receiving_tds)*6:null;
+ if(k==='standard_fantasy_points'){const source=first(r,['fantasy_points']);if(source!==''){const exact=Number(source);if(Number.isFinite(exact))return exact;}return (hasCol(r,['passing_yards'])||hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?py/25+ptd*4-ints*2+ry/10+num(r.rushing_tds)*6+recy/10+num(r.receiving_tds)*6:null;}
  }
- if(m.rate){const a=num(r.attempts);return a?100*num(r.completions)/a:null}if(m.rating)return passerRating(r);if(k==='fumbles_recovered'){if(!hasCol(r,['fumbles_total','fumbles_lost_total']))return null;return Math.max(0,num(r.fumbles_total)-num(r.fumbles_lost_total))}if(k==='def_fumble_recoveries'){const cols=['fumble_recovery_own','fumble_recovery_opp','def_fumble_recovery_own','def_fumble_recovery','fumble_recoveries'];const found=cols.filter(c=>r[c]!==undefined&&r[c]!=='');if(!found.length)return null;return found.reduce((s,c)=>s+num(r[c]),0)}if(!hasCol(r,m.cols||[]))return null;const v=first(r,m.cols||[]);if(v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
+ if(m.rate){const a=num(r.attempts);return a?100*num(r.completions)/a:null}if(m.rating)return passerRating(r);if(k==='fumbles_recovered'){if(!hasCol(r,['fumbles_total','fumbles_lost_total']))return null;return Math.max(0,num(r.fumbles_total)-num(r.fumbles_lost_total))}if(k==='def_fumble_recoveries'){const direct=first(r,['def_fumble_recoveries','fumble_recoveries','def_fumble_recovery']);if(direct!==''){const value=Number(direct);return Number.isFinite(value)?value:null;}const own=first(r,['fumble_recovery_own','def_fumble_recovery_own']),opp=first(r,['fumble_recovery_opp']);if(own===''&&opp==='')return null;return (own===''?0:num(own))+(opp===''?0:num(opp));}if(!hasCol(r,m.cols||[]))return null;const v=first(r,m.cols||[]);if(v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
 function fmt(v,k){if(v===null||v===undefined||!Number.isFinite(Number(v)))return'—';if(['completion_pct','pass_td_pct','pass_int_pct','catch_rate','receiving_drop_pct','fg_pct','pat_pct'].includes(k))return Number(v).toFixed(1)+'%';if(k==='average_time_to_throw')return Number(v).toFixed(2)+' s';if(['passer_rating','passing_epa','pass_yards_per_attempt','rushing_yards_per_carry','receiving_yards_per_catch','receiving_yards_per_target','td_int_ratio'].includes(k))return Number(v).toFixed(1);return Number(v).toLocaleString(undefined,{maximumFractionDigits:1})}
 function availableWeeks(){return [...new Set(seasonRows().map(r=>r.week).filter(w=>w>=1&&w<=22))].sort((a,b)=>a-b)}
 function buildTeams(){const sel=$('team'),old=sel.value;sel.innerHTML='<option value="">All teams</option>';[...new Set(seasonRows().map(r=>r.team).filter(Boolean))].sort().forEach(t=>sel.add(new Option(teamName(t),t)));sel.value=[...sel.options].some(o=>o.value===old)?old:''}
@@ -802,9 +807,32 @@ function renderLeague(){const v=view,year=+$((v==='playoffbracket'?'bracketYear'
  if(v==='playoffbracket'){if(year===2025){const historical={AFC:[['Denver Broncos','14–3','First-round bye'],['New England Patriots','14–3','vs Los Angeles Chargers (7)'],['Jacksonville Jaguars','13–4','vs Buffalo Bills (6)'],['Pittsburgh Steelers','10–7','vs Houston Texans (5)'],['Houston Texans','12–5','at Pittsburgh Steelers (4)'],['Buffalo Bills','12–5','at Jacksonville Jaguars (3)'],['Los Angeles Chargers','11–6','at New England Patriots (2)']],NFC:[['Seattle Seahawks','14–3','First-round bye'],['Chicago Bears','11–6','vs Green Bay Packers (7)'],['Philadelphia Eagles','11–6','vs San Francisco 49ers (6)'],['Carolina Panthers','8–9','vs Los Angeles Rams (5)'],['Los Angeles Rams','12–5','at Carolina Panthers (4)'],['San Francisco 49ers','12–5','at Philadelphia Eagles (3)'],['Green Bay Packers','9–7–1','at Chicago Bears (2)']]};$('bracketNotice').textContent='FINAL 2025 PLAYOFF BRACKET — official regular-season seeds and Wild Card matchups. Historical data is shown directly rather than recalculated from the tracker schedule.';let hist='';Object.entries(historical).forEach(([conf,rows])=>{hist+=`<h3 style="margin:18px 0 8px">${conf} — final playoff bracket</h3><div class="tablewrap"><table><thead><tr><th>Seed</th><th>Team</th><th>Regular-season record</th><th>Wild Card round</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>`});$('bracketContent').innerHTML=hist;return}const postseason=scheduleRows.filter(g=>num(first(g,['season','year']))===year&&/^(POST|POSTSEASON|PLAYOFF)/.test(String(first(g,['game_type','season_type','seasonType','game_type_abbr','season_type_name'])||'').toUpperCase()));if(postseason.length){$('bracketNotice').textContent='Postseason fixtures found in schedule.csv. Scores and statuses are shown from the source data; verify that the schedule feed contains the complete official bracket before treating this as authoritative.';$('bracketContent').innerHTML='<div class="tablewrap"><table><thead><tr><th>Week / Round</th><th>Away</th><th>Score</th><th>Home</th><th>Status</th></tr></thead><tbody>'+postseason.sort((a,b)=>num(first(a,['week']))-num(first(b,['week']))).map(g=>{const z=gameTeams(g),done=completedGame(g),rawStatus=String(first(g,['game_status','status','state'])||'').toUpperCase(),status=done?'FINAL':(/LIVE|IN_PROGRESS|IN PROGRESS|IN-PROGRESS/.test(rawStatus)?'LIVE':(/POSTPON|CANCEL/.test(rawStatus)?rawStatus:'SCHEDULED'));return `<tr><td>${esc(first(g,['week'])||'—')}</td><td>${esc(teamName(z.away))}</td><td>${done?esc(z.as)+' – '+esc(z.hs):status==='LIVE'?'LIVE':'—'}</td><td>${esc(teamName(z.home))}</td><td>${status}</td></tr>`}).join('')+'</tbody></table></div>';return}const conferences=['AFC','NFC'];$('bracketNotice').textContent='PROJECTED — if the season ended today. Records include completed regular-season games only. Live seeding is provisional until all official NFL tiebreakers are applied.';let html='';conferences.forEach(conf=>{const divs=Object.keys(DIVISIONS).filter(d=>d.startsWith(conf));const winners=divs.map(d=>sortedDivision(d,records)[0]).filter(Boolean).sort((a,b)=>b.pct-a.pct||b.diff-a.diff);const winnerTeams=winners.map(t=>t.team);const wild=Object.values(records).filter(t=>teamDivision(t.team).startsWith(conf)&&!winnerTeams.includes(t.team)).sort((a,b)=>b.pct-a.pct||b.diff-a.diff||b.pf-a.pf).slice(0,3);const seeds=[...winners,...wild];html+=`<h3 style="margin:18px 0 8px">${conf} — projected playoff picture</h3><div class="tablewrap"><table><thead><tr><th>Seed</th><th>Team</th><th>Record</th><th>Position</th><th>Projected Wild Card matchup (provisional)</th></tr></thead><tbody>${seeds.map((t,i)=>{const seed=i+1,match=seed===1?'First-round bye':seed===2?`vs ${teamName(seeds[6]?.team||'TBD')} (7)`:seed===3?`vs ${teamName(seeds[5]?.team||'TBD')} (6)`:seed===4?`vs ${teamName(seeds[4]?.team||'TBD')} (5)`:seed===5?`at ${teamName(seeds[3]?.team||'TBD')} (4)`:seed===6?`at ${teamName(seeds[2]?.team||'TBD')} (3)`:`at ${teamName(seeds[1]?.team||'TBD')} (2)`;return `<tr><td class="rank">${seed}</td><td><b>${esc(teamName(t.team))}</b></td><td>${t.w}-${t.l}-${t.t}</td><td>${seed<=4?'Division winner':'Wild card'}</td><td>${match}</td></tr>`}).join('')}</tbody></table></div>`});$('bracketContent').innerHTML=html;}}
 function renderDraftOrder(){const year=+($('draftYear').value||2026),records=leagueRecords(year);if(!scheduleRows.length){$('draftContent').innerHTML='';$('draftNotice').textContent='Schedule data could not be loaded. Check data/schedule.csv.';return}const confs=['AFC','NFC'];let playoffTeams=new Set();confs.forEach(conf=>{const divs=Object.keys(DIVISIONS).filter(d=>d.startsWith(conf));const winners=divs.map(d=>sortedDivision(d,records)[0]).filter(Boolean).sort((a,b)=>b.pct-a.pct||b.diff-a.diff);const winnerIds=winners.map(t=>t.team);const wild=Object.values(records).filter(t=>teamDivision(t.team).startsWith(conf)&&!winnerIds.includes(t.team)).sort((a,b)=>b.pct-a.pct||b.diff-a.diff||b.pf-a.pf).slice(0,3);[...winners,...wild].forEach(t=>playoffTeams.add(t.team))});const teams=Object.values(records);const nonplayoff=teams.filter(t=>!playoffTeams.has(t.team)).sort((a,b)=>a.pct-b.pct||a.diff-b.diff||a.pf-b.pf);const playoff=teams.filter(t=>playoffTeams.has(t.team)).sort((a,b)=>b.pct-a.pct||b.diff-a.diff||b.pf-a.pf);const order=[...nonplayoff,...playoff];$('draftNotice').textContent=year===2026?'Provisional 2027 NFL Draft order based on 2026 results available in schedule.csv. Non-playoff teams are listed first from worst record upward; projected playoff teams follow. This is not official: final order depends on postseason results, strength of schedule, and trades.':'Historical estimate based on the selected season records, not the official draft order. Trades and NFL tiebreaking rules are not applied.';$('draftContent').innerHTML='<div class="tablewrap"><table><thead><tr><th>Pick</th><th>Team</th><th>Record</th><th>Win %</th><th>Point diff.</th><th>Draft status</th></tr></thead><tbody>'+order.map((t,i)=>`<tr><td class="rank">${i+1}</td><td><b>${esc(teamName(t.team))}</b></td><td>${t.w}-${t.l}-${t.t}</td><td>${t.pct.toFixed(3)}</td><td>${t.diff>0?'+':''}${t.diff}</td><td>${playoffTeams.has(t.team)?'Projected playoff team':'Currently outside playoff field'}</td></tr>`).join('')+'</tbody></table></div>'}
 
-const RECORD_RATIO_STATS=new Set(['pass_yards_per_attempt','pass_td_pct','pass_int_pct','td_int_ratio','rushing_yards_per_carry','receiving_yards_per_catch','receiving_yards_per_target','receiving_drop_pct','fg_pct','pat_pct','catch_rate']);
+const RECORD_RATIO_STATS=new Set(['pass_yards_per_attempt','pass_td_pct','pass_int_pct','td_int_ratio','rushing_yards_per_carry','receiving_yards_per_catch','receiving_yards_per_target','receiving_drop_pct','fg_pct','pat_pct','catch_rate','average_depth_of_target','punting_avg','punting_net_avg','kick_return_avg','punt_return_avg']);
+const RECORD_AVERAGE_WEIGHT_COLS={
+ passing_cpoe:['attempts'],
+ passing_success_rate:['attempts','passing_attempts'],
+ rushing_success_rate:['carries','rushing_attempts'],
+ def_pressure_rate:['def_pass_rush_snaps','pass_rush_snaps','defensive_pass_rush_snaps'],
+ average_time_to_throw:['attempts','passing_attempts']
+};
 let recordsIndex=null,recordsBuildPromise=null,recordsCoverageYears=0,recordsSkippedYears=[],recordsRenderSequence=0;
-
+function recordAverageWeight(row,stat){
+ const columns=RECORD_AVERAGE_WEIGHT_COLS[stat]||[];
+ const rawValue=first(row,columns);
+ if(rawValue===''||rawValue===null||rawValue===undefined)return null;
+ const weight=Number(rawValue);
+ return Number.isFinite(weight)&&weight>0?weight:null;
+}
+function weightedRecordAverage(rows,stat){
+ let weightedTotal=0,totalWeight=0;
+ rows.forEach(row=>{
+  const value=metricValue(row,stat),weight=recordAverageWeight(row,stat);
+  if(value===null||value===undefined||!Number.isFinite(Number(value))||weight===null)return;
+  weightedTotal+=Number(value)*weight;
+  totalWeight+=weight;
+ });
+ return totalWeight?weightedTotal/totalWeight:null;
+}
 function createRecordsIndex(){
  const index={};
  ['weekly','season','career'].forEach(mode=>{
@@ -826,16 +854,24 @@ function aggregateRecordColumns(rows){
  }));
  return totals;
 }
-function recordAggregateValue(rows,stat){
+function recordAggregateValue(rows,stat,mode){
  if(!rows.length||!metrics[stat])return null;
  const meta=metrics[stat];
  if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
   const result=metricValue(aggregateRecordColumns(rows),stat);
   return result===null||result===undefined||!Number.isFinite(Number(result))?null:Number(result);
  }
+ if(meta.average){
+  if(mode==='weekly'&&rows.length===1){
+   const value=metricValue(rows[0],stat);
+   if(value===null||value===undefined||!Number.isFinite(Number(value)))return null;
+   if(recordAverageWeight(rows[0],stat)!==null||stat==='def_pressure_rate')return Number(value);
+   return null;
+  }
+  return weightedRecordAverage(rows,stat);
+ }
  const values=rows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
  if(!values.length)return null;
- if(meta.average)return values.reduce((sum,value)=>sum+value,0)/values.length;
  if(meta.max)return Math.max(...values);
  return values.reduce((sum,value)=>sum+value,0);
 }
@@ -855,6 +891,8 @@ function recordPhaseLabel(phase){
 }
 function addTopRecord(index,mode,phase,stat,entry){
  if(entry.value===null||entry.value===undefined||!Number.isFinite(Number(entry.value)))return;
+ const meta=metrics[stat];
+ if(Number(entry.value)===0&&meta&&(meta.sum||meta.max||meta.fumblesRecovered||(meta.derived&&!RECORD_RATIO_STATS.has(stat))))return;
  const list=index[mode][phase][stat];
  if(list.length>=100&&Number(entry.value)<Number(list[list.length-1].value))return;
  list.push(entry);
@@ -862,7 +900,7 @@ function addTopRecord(index,mode,phase,stat,entry){
  if(list.length>100)list.length=100;
 }
 function createRecordEntry(rows,year,mode,stat,phase){
- const value=recordAggregateValue(rows,stat);
+ const value=recordAggregateValue(rows,stat,mode);
  if(value===null)return null;
  const player=rows[0].player||'Unknown player';
  const teams=[...new Set(rows.map(row=>teamName(row.team)).filter(team=>team&&team!=='—'))];
@@ -877,7 +915,7 @@ function createRecordEntry(rows,year,mode,stat,phase){
  return {player:player,team:teams.join(', ')||'—',value:Number(value),scope:scope,year:year,week:mode==='weekly'?Number(rows[0].week):null,weeks:weekKeys.length,seasons:1};
 }
 function newCareerBucket(rows){
- return {player:rows[0].player||'Unknown player',rawTotals:{},sums:{},sumCounts:{},averageSums:{},averageCounts:{},maxValues:{},seasons:new Set(),weeks:new Set(),teams:new Set()};
+ return {player:rows[0].player||'Unknown player',rawTotals:{},sums:{},sumCounts:{},weightedAverageSums:{},weightedAverageWeights:{},averageSums:{},averageCounts:{},maxValues:{},seasons:new Set(),weeks:new Set(),teams:new Set()};
 }
 function addCareerSeason(bucket,rows,year){
  if(!rows.length)return;
@@ -897,8 +935,12 @@ function addCareerSeason(bucket,rows,year){
   const values=rows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
   if(!values.length)return;
   if(meta.average){
-   bucket.averageSums[stat]=(bucket.averageSums[stat]||0)+values.reduce((sum,value)=>sum+value,0);
-   bucket.averageCounts[stat]=(bucket.averageCounts[stat]||0)+values.length;
+   rows.forEach(row=>{
+    const value=metricValue(row,stat),weight=recordAverageWeight(row,stat);
+    if(value===null||value===undefined||!Number.isFinite(Number(value))||weight===null)return;
+    bucket.weightedAverageSums[stat]=(bucket.weightedAverageSums[stat]||0)+Number(value)*weight;
+    bucket.weightedAverageWeights[stat]=(bucket.weightedAverageWeights[stat]||0)+weight;
+   });
   }else if(meta.max){
    const maximum=Math.max(...values);
    bucket.maxValues[stat]=bucket.maxValues[stat]===undefined?maximum:Math.max(bucket.maxValues[stat],maximum);
@@ -914,7 +956,7 @@ function careerRecordValue(bucket,stat){
   const value=metricValue(bucket.rawTotals,stat);
   return value===null||value===undefined||!Number.isFinite(Number(value))?null:Number(value);
  }
- if(meta.average)return bucket.averageCounts[stat]?(bucket.averageSums[stat]||0)/bucket.averageCounts[stat]:null;
+ if(meta.average)return bucket.weightedAverageWeights[stat]?(bucket.weightedAverageSums[stat]||0)/bucket.weightedAverageWeights[stat]:null;
  if(meta.max)return bucket.maxValues[stat]===undefined?null:bucket.maxValues[stat];
  return bucket.sumCounts[stat]?(bucket.sums[stat]||0):null;
 }
