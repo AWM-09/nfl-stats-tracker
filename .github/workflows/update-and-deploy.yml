@@ -325,6 +325,9 @@ jobs:
           print(f"Total matched rows: {total_matched}")
           PY
 
+      - name: Precompute Records index for fast browser loading
+        run: node scripts/build-records-index.js
+
       - name: Download NFL schedule and scores
         shell: bash
         run: |
@@ -394,6 +397,8 @@ jobs:
           cp rulebook.html site/rulebook.html
           cp data/advanced_team_week_*.csv site/data/
           cp data/stats_player_week_*.csv site/data/
+          cp data/records-index.json site/data/records-index.json
+          test -s site/data/records-index.json
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
           for year in 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
