@@ -773,8 +773,8 @@ const DIVISIONS={
 function gameTeams(g){return {home:String(first(g,['home_team','homeTeam'])).toUpperCase(),away:String(first(g,['away_team','awayTeam'])).toUpperCase(),hs:first(g,['home_score','home_points']),as:first(g,['away_score','away_points'])}}
 function completedGame(g){const {hs,as}=gameTeams(g);return hs!==''&&hs!==undefined&&as!==''&&as!==undefined&&Number.isFinite(Number(hs))&&Number.isFinite(Number(as))}
 function isRegularSeasonGame(g){const raw=String(first(g,['game_type','season_type','seasonType','game_type_abbr','season_type_name','week_type'])||'').trim().toUpperCase();if(raw){return raw==='REG'||raw.startsWith('REGULAR')||raw==='R';}const week=Number(first(g,['week','week_number']));return Number.isFinite(week)&&week>=1&&week<=18;}
-function leagueRecords(year){const teams={};Object.keys(TEAM_NAMES).forEach(t=>{if(t.length<=3&&!['JAC','LAR','OAK','WSH'].includes(t)&&!teams[t])teams[t]={team:t,w:0,l:0,t:0,pf:0,pa:0,played:0}});
- const canonical=x=>({'JAC':'JAX','LAR':'LA','OAK':'LV','WSH':'WAS'}[x]||x);
+function leagueRecords(year){const teams={};Object.keys(TEAM_NAMES).forEach(t=>{if(t.length<=3&&!['JAC','LAR','OAK','WSH','SD','STL'].includes(t)&&!teams[t])teams[t]={team:t,w:0,l:0,t:0,pf:0,pa:0,played:0}});
+ const canonical=x=>({'JAC':'JAX','LAR':'LA','OAK':'LV','WSH':'WAS','SD':'LAC','STL':'LA'}[x]||x);
  scheduleRows.filter(g=>num(first(g,['season','year']))===year&&completedGame(g)&&isRegularSeasonGame(g)).forEach(g=>{const z=gameTeams(g),h=canonical(z.home),a=canonical(z.away);if(!teams[h])teams[h]={team:h,w:0,l:0,t:0,pf:0,pa:0,played:0};if(!teams[a])teams[a]={team:a,w:0,l:0,t:0,pf:0,pa:0,played:0};const hs=+z.hs,as=+z.as;teams[h].pf+=hs;teams[h].pa+=as;teams[a].pf+=as;teams[a].pa+=hs;teams[h].played++;teams[a].played++;if(hs>as){teams[h].w++;teams[a].l++}else if(as>hs){teams[a].w++;teams[h].l++}else{teams[h].t++;teams[a].t++}});
  Object.values(teams).forEach(t=>{t.pct=(t.w+t.t/2)/(t.w+t.l+t.t||1);t.diff=t.pf-t.pa});return teams}
 function teamDivision(team){return Object.entries(DIVISIONS).find(([d,ts])=>ts.includes(team))?.[0]||'Unknown'}
