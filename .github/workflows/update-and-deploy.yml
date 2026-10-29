@@ -406,9 +406,18 @@ jobs:
             test -s "site/data/play_by_play_${year}.csv.gz"
           done
           python3 - <<'PY'
+          import os, re
           from pathlib import Path
           path = Path("site/index.html")
           html = path.read_text(encoding="utf-8")
+          build_id = os.environ.get("GITHUB_RUN_ID", "records-v1")
+          html, replaced = re.subn(
+              r'(<meta name="nfl-stats-build" content=")[^"]*(">)',
+              lambda match: match.group(1) + build_id + match.group(2),
+              html, count=1
+          )
+          if replaced != 1:
+              raise SystemExit("Could not version the dashboard build/cache key.")
           old_tab = '<button class="tab" data-view="calendar">NFL Calendar</button>'
           new_tab = '<a class="tab" href="./calendar.html">NFL Calendar &amp; Predictor ↗</a>'
           if old_tab in html:
