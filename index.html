@@ -1101,7 +1101,8 @@ function setupRecordsControls(){
  ['recordsMetric','recordsMode','recordsPhase','recordsLimit'].forEach(id=>$(id).addEventListener('change',renderRecords));
 }
 async function loadPrecomputedRecordsIndex(){
- const response=await fetch('./data/records-index.json',{cache:'force-cache'});
+ const buildTag=document.querySelector('meta[name="nfl-stats-build"]')?.content||'records-v1';
+ const response=await fetch('./data/records-index.json?build='+encodeURIComponent(buildTag),{cache:'force-cache'});
  if(!response.ok)throw new Error('HTTP '+response.status+' loading the precomputed index');
  const payload=await response.json();
  if(payload.version!==1||!payload.index)throw new Error('Invalid or outdated precomputed records index');
