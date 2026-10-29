@@ -113,7 +113,7 @@ select option:checked {
 </section>
 <section class="week-picker"><div class="week-title">Weeks included in totals and trends</div><div class="weeks" id="weekChoices"></div><div class="week-actions" style="margin-top:10px"><button id="allWeeksBtn">Select all available weeks</button><button id="clearWeeksBtn">Clear selection</button></div><div class="small muted" id="selectedWeeksNote" style="margin-top:8px">No weeks selected</div></section>
 <nav class="tabs" id="viewTabs">
-<button class="tab active" data-view="weekly">Weekly leaderboard</button><button class="tab" data-view="cumulative">Selected weeks total</button><button class="tab" data-view="compare">Week-by-week breakdown</button><button class="tab" data-view="team">Team totals</button><button class="tab" data-view="playercompare">Player comparison</button><button class="tab" data-view="teamcompare">Team comparison</button><button class="tab" data-view="teamstats">Team statistics</button><a class="tab" href="./calendar.html">NFL Calendar + Predictor</a><button class="tab" data-view="afcstandings">AFC Standings</button><button class="tab" data-view="nfcstandings">NFC Standings</button><button class="tab" data-view="playoffbracket">Playoff Bracket · As It Stands</button><button class="tab" data-view="draftorder">Draft Order · As It Stands</button><button class="tab" data-view="factgen">Statistical Fact Generator</button> <a class="tab" href="./advanced.html">Advanced Lab ↗</a>
+<button class="tab active" data-view="weekly">Weekly leaderboard</button><button class="tab" data-view="cumulative">Selected weeks total</button><button class="tab" data-view="compare">Week-by-week breakdown</button><button class="tab" data-view="team">Team totals</button><button class="tab" data-view="playercompare">Player comparison</button><button class="tab" data-view="teamcompare">Team comparison</button><button class="tab" data-view="teamstats">Team statistics</button><a class="tab" href="./calendar.html">NFL Calendar + Predictor</a><button class="tab" data-view="afcstandings">AFC Standings</button><button class="tab" data-view="nfcstandings">NFC Standings</button><button class="tab" data-view="playoffbracket">Playoff Bracket · As It Stands</button><button class="tab" data-view="draftorder">Draft Order · As It Stands</button><button class="tab" data-view="factgen">Statistical Fact Generator</button><button class="tab" data-view="records">Records</button> <a class="tab" href="./advanced.html">Advanced Lab ↗</a>
 </nav>
 <section class="panel hidden" id="leaguePanel"><div class="panel-head"><h2 id="leagueTitle">NFL Standings</h2><span class="tag" id="leagueTag">AS IT STANDS</span></div><div class="field" style="max-width:220px;margin-bottom:12px"><label for="leagueYear">Season</label><select id="leagueYear"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option></select></div><div class="notice" id="leagueNotice">Standings are calculated from completed games in the schedule data.</div><div id="leagueContent"></div></section>
 <section class="panel hidden" id="bracketPanel"><div class="panel-head"><h2>Playoff Bracket</h2><span class="tag">AS IT STANDS</span></div><div class="field" style="max-width:220px;margin-bottom:12px"><label for="bracketYear">Season</label><select id="bracketYear"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option></select></div><div class="notice" id="bracketNotice">Projected matchups if the season ended today. The projection updates from completed games; it is not an official NFL tiebreaker engine.</div><div id="bracketContent"></div></section>
@@ -134,6 +134,18 @@ select option:checked {
 <textarea id="contentPackOutput" rows="13" readonly aria-label="Generated content pack" style="width:100%;min-width:0;resize:vertical;background:#0b1722;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace"></textarea>
 <canvas id="factCardCanvas" width="1080" height="1350" hidden></canvas>
 </div></section><section class="panel hidden" id="draftPanel"><div class="panel-head"><h2>2027 NFL Draft Order · As It Stands</h2><span class="tag">PROVISIONAL ORDER</span></div><div class="field" style="max-width:220px;margin-bottom:12px"><label for="draftYear">Season being played</label><select id="draftYear"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option></select></div><div class="notice" id="draftNotice">Provisional draft order based on the selected season's current records. Official order changes with playoff results, strength of schedule, and trades.</div><div id="draftContent"></div></section>
+<section class="panel hidden" id="recordsPanel">
+<div class="panel-head"><h2>NFL Records Explorer</h2><span class="tag">HISTORICAL RECORDS</span></div>
+<p class="muted">Find the highest weekly performance, single-season mark or career total for any statistic tracked by this dashboard. Records are calculated from available player-week data across the seasons published here. Advanced statistics may not be tracked in older seasons; missing values are excluded, not treated as zero.</p>
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+<div class="field"><label for="recordsMetric">Statistic</label><select id="recordsMetric"></select></div>
+<div class="field"><label for="recordsMode">Record type</label><select id="recordsMode"><option value="weekly">Weekly record (single week)</option><option value="season">Single-season record</option><option value="career">Career record</option></select></div>
+<div class="field"><label for="recordsPhase">Season phase</label><select id="recordsPhase"><option value="ALL">Regular season + playoffs</option><option value="REG">Regular season only</option><option value="POST">Playoffs only</option></select></div>
+<div class="field"><label for="recordsLimit">Show top</label><select id="recordsLimit"><option value="10">10 records</option><option value="25" selected>25 records</option><option value="50">50 records</option></select></div>
+</div>
+<div class="notice" id="recordsStatus">Records are loaded when you open this tab. The first load scans the historical player-week files.</div>
+<div id="recordsResults"></div>
+</section>
 <section class="panel hidden" id="calendarPanel">
 <div class="panel-head"><h2>NFL Schedule & Scores</h2><span class="tag">SCHEDULE</span></div>
 <div class="notice">Game times are converted from the schedule's Eastern Time to your selected timezone. Scores and statuses update when the schedule data is refreshed.</div>
@@ -789,8 +801,236 @@ function renderLeague(){const v=view,year=+$((v==='playoffbracket'?'bracketYear'
  if(v==='afcstandings'||v==='nfcstandings'){const conf=v==='afcstandings'?'AFC':'NFC';$('leagueTitle').textContent=`${year} ${conf} Standings`;$('leagueTag').textContent='AS IT STANDS';$('leagueNotice').textContent='Calculated from completed regular-season games in schedule.csv. Tiebreakers are approximated by win percentage, point differential, then points scored.';let html='';Object.keys(DIVISIONS).filter(d=>d.startsWith(conf)).forEach(d=>{html+=`<h3 style="margin:18px 0 8px">${d}</h3>${standingsTable(sortedDivision(d,records))}`});$('leagueContent').innerHTML=html;}
  if(v==='playoffbracket'){if(year===2025){const historical={AFC:[['Denver Broncos','14–3','First-round bye'],['New England Patriots','14–3','vs Los Angeles Chargers (7)'],['Jacksonville Jaguars','13–4','vs Buffalo Bills (6)'],['Pittsburgh Steelers','10–7','vs Houston Texans (5)'],['Houston Texans','12–5','at Pittsburgh Steelers (4)'],['Buffalo Bills','12–5','at Jacksonville Jaguars (3)'],['Los Angeles Chargers','11–6','at New England Patriots (2)']],NFC:[['Seattle Seahawks','14–3','First-round bye'],['Chicago Bears','11–6','vs Green Bay Packers (7)'],['Philadelphia Eagles','11–6','vs San Francisco 49ers (6)'],['Carolina Panthers','8–9','vs Los Angeles Rams (5)'],['Los Angeles Rams','12–5','at Carolina Panthers (4)'],['San Francisco 49ers','12–5','at Philadelphia Eagles (3)'],['Green Bay Packers','9–7–1','at Chicago Bears (2)']]};$('bracketNotice').textContent='FINAL 2025 PLAYOFF BRACKET — official regular-season seeds and Wild Card matchups. Historical data is shown directly rather than recalculated from the tracker schedule.';let hist='';Object.entries(historical).forEach(([conf,rows])=>{hist+=`<h3 style="margin:18px 0 8px">${conf} — final playoff bracket</h3><div class="tablewrap"><table><thead><tr><th>Seed</th><th>Team</th><th>Regular-season record</th><th>Wild Card round</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>`});$('bracketContent').innerHTML=hist;return}const postseason=scheduleRows.filter(g=>num(first(g,['season','year']))===year&&/^(POST|POSTSEASON|PLAYOFF)/.test(String(first(g,['game_type','season_type','seasonType','game_type_abbr','season_type_name'])||'').toUpperCase()));if(postseason.length){$('bracketNotice').textContent='Postseason fixtures found in schedule.csv. Scores and statuses are shown from the source data; verify that the schedule feed contains the complete official bracket before treating this as authoritative.';$('bracketContent').innerHTML='<div class="tablewrap"><table><thead><tr><th>Week / Round</th><th>Away</th><th>Score</th><th>Home</th><th>Status</th></tr></thead><tbody>'+postseason.sort((a,b)=>num(first(a,['week']))-num(first(b,['week']))).map(g=>{const z=gameTeams(g),done=completedGame(g),rawStatus=String(first(g,['game_status','status','state'])||'').toUpperCase(),status=done?'FINAL':(/LIVE|IN_PROGRESS|IN PROGRESS|IN-PROGRESS/.test(rawStatus)?'LIVE':(/POSTPON|CANCEL/.test(rawStatus)?rawStatus:'SCHEDULED'));return `<tr><td>${esc(first(g,['week'])||'—')}</td><td>${esc(teamName(z.away))}</td><td>${done?esc(z.as)+' – '+esc(z.hs):status==='LIVE'?'LIVE':'—'}</td><td>${esc(teamName(z.home))}</td><td>${status}</td></tr>`}).join('')+'</tbody></table></div>';return}const conferences=['AFC','NFC'];$('bracketNotice').textContent='PROJECTED — if the season ended today. Records include completed regular-season games only. Live seeding is provisional until all official NFL tiebreakers are applied.';let html='';conferences.forEach(conf=>{const divs=Object.keys(DIVISIONS).filter(d=>d.startsWith(conf));const winners=divs.map(d=>sortedDivision(d,records)[0]).filter(Boolean).sort((a,b)=>b.pct-a.pct||b.diff-a.diff);const winnerTeams=winners.map(t=>t.team);const wild=Object.values(records).filter(t=>teamDivision(t.team).startsWith(conf)&&!winnerTeams.includes(t.team)).sort((a,b)=>b.pct-a.pct||b.diff-a.diff||b.pf-a.pf).slice(0,3);const seeds=[...winners,...wild];html+=`<h3 style="margin:18px 0 8px">${conf} — projected playoff picture</h3><div class="tablewrap"><table><thead><tr><th>Seed</th><th>Team</th><th>Record</th><th>Position</th><th>Projected Wild Card matchup (provisional)</th></tr></thead><tbody>${seeds.map((t,i)=>{const seed=i+1,match=seed===1?'First-round bye':seed===2?`vs ${teamName(seeds[6]?.team||'TBD')} (7)`:seed===3?`vs ${teamName(seeds[5]?.team||'TBD')} (6)`:seed===4?`vs ${teamName(seeds[4]?.team||'TBD')} (5)`:seed===5?`at ${teamName(seeds[3]?.team||'TBD')} (4)`:seed===6?`at ${teamName(seeds[2]?.team||'TBD')} (3)`:`at ${teamName(seeds[1]?.team||'TBD')} (2)`;return `<tr><td class="rank">${seed}</td><td><b>${esc(teamName(t.team))}</b></td><td>${t.w}-${t.l}-${t.t}</td><td>${seed<=4?'Division winner':'Wild card'}</td><td>${match}</td></tr>`}).join('')}</tbody></table></div>`});$('bracketContent').innerHTML=html;}}
 function renderDraftOrder(){const year=+($('draftYear').value||2026),records=leagueRecords(year);if(!scheduleRows.length){$('draftContent').innerHTML='';$('draftNotice').textContent='Schedule data could not be loaded. Check data/schedule.csv.';return}const confs=['AFC','NFC'];let playoffTeams=new Set();confs.forEach(conf=>{const divs=Object.keys(DIVISIONS).filter(d=>d.startsWith(conf));const winners=divs.map(d=>sortedDivision(d,records)[0]).filter(Boolean).sort((a,b)=>b.pct-a.pct||b.diff-a.diff);const winnerIds=winners.map(t=>t.team);const wild=Object.values(records).filter(t=>teamDivision(t.team).startsWith(conf)&&!winnerIds.includes(t.team)).sort((a,b)=>b.pct-a.pct||b.diff-a.diff||b.pf-a.pf).slice(0,3);[...winners,...wild].forEach(t=>playoffTeams.add(t.team))});const teams=Object.values(records);const nonplayoff=teams.filter(t=>!playoffTeams.has(t.team)).sort((a,b)=>a.pct-b.pct||a.diff-b.diff||a.pf-b.pf);const playoff=teams.filter(t=>playoffTeams.has(t.team)).sort((a,b)=>b.pct-a.pct||b.diff-a.diff||b.pf-a.pf);const order=[...nonplayoff,...playoff];$('draftNotice').textContent=year===2026?'Provisional 2027 NFL Draft order based on 2026 results available in schedule.csv. Non-playoff teams are listed first from worst record upward; projected playoff teams follow. This is not official: final order depends on postseason results, strength of schedule, and trades.':'Historical estimate based on the selected season records, not the official draft order. Trades and NFL tiebreaking rules are not applied.';$('draftContent').innerHTML='<div class="tablewrap"><table><thead><tr><th>Pick</th><th>Team</th><th>Record</th><th>Win %</th><th>Point diff.</th><th>Draft status</th></tr></thead><tbody>'+order.map((t,i)=>`<tr><td class="rank">${i+1}</td><td><b>${esc(teamName(t.team))}</b></td><td>${t.w}-${t.l}-${t.t}</td><td>${t.pct.toFixed(3)}</td><td>${t.diff>0?'+':''}${t.diff}</td><td>${playoffTeams.has(t.team)?'Projected playoff team':'Currently outside playoff field'}</td></tr>`).join('')+'</tbody></table></div>'}
-function init(){ setupStatAdders(); populateSeasonDropdown('year',2026);$('calendarTimezone').value=localStorage.getItem('nflCalendarTimezone')||'Europe/London';
-$('viewTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{view=b.dataset.view;$('viewTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));const league=['afcstandings','nfcstandings'].includes(view),bracket=view==='playoffbracket',draft=view==='draftorder',teamstats=view==='teamstats',factgen=view==='factgen';$('mainPanel').classList.toggle('hidden',view==='calendar'||league||bracket||draft||teamstats||factgen||view==='playercompare'||view==='teamcompare');$('comparePanel').classList.toggle('hidden',view!=='playercompare');$('teamComparePanel').classList.toggle('hidden',view!=='teamcompare');$('calendarPanel').classList.toggle('hidden',view!=='calendar');$('leaguePanel').classList.toggle('hidden',!league);$('bracketPanel').classList.toggle('hidden',!bracket);$('draftPanel').classList.toggle('hidden',!draft);$('factPanel').classList.toggle('hidden',!factgen);$('teamStatsPanel').classList.toggle('hidden',!teamstats);document.querySelector('.lower').classList.toggle('hidden',view==='teamcompare'||view==='calendar'||league||bracket||draft||teamstats||factgen);if(teamstats){loadTeamStats().then(renderTeamStats);$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('calendarPanel').classList.add('hidden');$('leaguePanel').classList.add('hidden');$('bracketPanel').classList.add('hidden');$('draftPanel').classList.add('hidden');}else if(view==='calendar'){$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('leaguePanel').classList.add('hidden');$('bracketPanel').classList.add('hidden');$('draftPanel').classList.add('hidden');renderCalendar();}else if(league||bracket){$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('draftPanel').classList.add('hidden');renderLeague();}else if(draft){$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('leaguePanel').classList.add('hidden');$('bracketPanel').classList.add('hidden');renderDraftOrder()}else{render()}});
+
+const RECORD_RATIO_STATS=new Set(['pass_yards_per_attempt','pass_td_pct','pass_int_pct','td_int_ratio','rushing_yards_per_carry','receiving_yards_per_catch','receiving_yards_per_target','receiving_drop_pct','fg_pct','pat_pct','catch_rate']);
+let recordsIndex=null,recordsBuildPromise=null,recordsCoverageYears=0,recordsSkippedYears=[],recordsRenderSequence=0;
+
+function createRecordsIndex(){
+ const index={};
+ ['weekly','season','career'].forEach(mode=>{
+  index[mode]={};
+  ['ALL','REG','POST'].forEach(phase=>{
+   index[mode][phase]={};
+   Object.keys(metrics).forEach(stat=>{index[mode][phase][stat]=[]});
+  });
+ });
+ return index;
+}
+function aggregateRecordColumns(rows){
+ const totals={};
+ rows.forEach(row=>Object.entries(row).forEach(([key,value])=>{
+  if(value===null||value===undefined||String(value).trim()==='')return;
+  const n=Number(value);
+  if(Number.isFinite(n))totals[key]=(totals[key]||0)+n;
+  else if(totals[key]===undefined)totals[key]=value;
+ }));
+ return totals;
+}
+function recordAggregateValue(rows,stat){
+ if(!rows.length||!metrics[stat])return null;
+ const meta=metrics[stat];
+ if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
+  const result=metricValue(aggregateRecordColumns(rows),stat);
+  return result===null||result===undefined||!Number.isFinite(Number(result))?null:Number(result);
+ }
+ const values=rows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
+ if(!values.length)return null;
+ if(meta.average)return values.reduce((sum,value)=>sum+value,0)/values.length;
+ if(meta.max)return Math.max(...values);
+ return values.reduce((sum,value)=>sum+value,0);
+}
+function groupRecordRows(rows,keyFunction){
+ const groups=new Map();
+ rows.forEach(row=>{
+  const key=keyFunction(row);
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(row);
+ });
+ return groups;
+}
+function recordPhaseLabel(phase){
+ if(phase==='REG')return 'Regular season';
+ if(phase==='POST')return 'Playoffs';
+ return 'Regular season + playoffs';
+}
+function addTopRecord(index,mode,phase,stat,entry){
+ if(entry.value===null||entry.value===undefined||!Number.isFinite(Number(entry.value)))return;
+ const list=index[mode][phase][stat];
+ if(list.length>=100&&Number(entry.value)<Number(list[list.length-1].value))return;
+ list.push(entry);
+ list.sort((a,b)=>Number(b.value)-Number(a.value)||String(a.player).localeCompare(String(b.player))||(b.year||0)-(a.year||0));
+ if(list.length>100)list.length=100;
+}
+function createRecordEntry(rows,year,mode,stat,phase){
+ const value=recordAggregateValue(rows,stat);
+ if(value===null)return null;
+ const player=rows[0].player||'Unknown player';
+ const teams=[...new Set(rows.map(row=>teamName(row.team)).filter(team=>team&&team!=='—'))];
+ const weekKeys=[...new Set(rows.map(row=>String(row.week)+'|'+String(row.season_type)))];
+ let scope='';
+ if(mode==='weekly'){
+  const actualPhase=phase==='ALL'?(rows.some(row=>phaseMatches(row,'POST'))?'POST':'REG'):phase;
+  scope=year+' · Week '+rows[0].week+' · '+recordPhaseLabel(actualPhase);
+ }else{
+  scope=year+' season · '+recordPhaseLabel(phase);
+ }
+ return {player:player,team:teams.join(', ')||'—',value:Number(value),scope:scope,year:year,week:mode==='weekly'?Number(rows[0].week):null,weeks:weekKeys.length,seasons:1};
+}
+function newCareerBucket(rows){
+ return {player:rows[0].player||'Unknown player',rawTotals:{},sums:{},sumCounts:{},averageSums:{},averageCounts:{},maxValues:{},seasons:new Set(),weeks:new Set(),teams:new Set()};
+}
+function addCareerSeason(bucket,rows,year){
+ if(!rows.length)return;
+ bucket.player=rows[rows.length-1].player||bucket.player;
+ bucket.seasons.add(year);
+ rows.forEach(row=>{
+  bucket.weeks.add(String(year)+'|'+String(row.week)+'|'+String(row.season_type));
+  if(row.team)bucket.teams.add(teamName(row.team));
+ });
+ const rawYear=aggregateRecordColumns(rows);
+ Object.entries(rawYear).forEach(([key,value])=>{
+  if(typeof value==='number'&&Number.isFinite(value))bucket.rawTotals[key]=(bucket.rawTotals[key]||0)+value;
+  else if(bucket.rawTotals[key]===undefined)bucket.rawTotals[key]=value;
+ });
+ Object.entries(metrics).forEach(([stat,meta])=>{
+  if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat)))return;
+  const values=rows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
+  if(!values.length)return;
+  if(meta.average){
+   bucket.averageSums[stat]=(bucket.averageSums[stat]||0)+values.reduce((sum,value)=>sum+value,0);
+   bucket.averageCounts[stat]=(bucket.averageCounts[stat]||0)+values.length;
+  }else if(meta.max){
+   const maximum=Math.max(...values);
+   bucket.maxValues[stat]=bucket.maxValues[stat]===undefined?maximum:Math.max(bucket.maxValues[stat],maximum);
+  }else{
+   bucket.sums[stat]=(bucket.sums[stat]||0)+values.reduce((sum,value)=>sum+value,0);
+   bucket.sumCounts[stat]=(bucket.sumCounts[stat]||0)+values.length;
+  }
+ });
+}
+function careerRecordValue(bucket,stat){
+ const meta=metrics[stat];
+ if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
+  const value=metricValue(bucket.rawTotals,stat);
+  return value===null||value===undefined||!Number.isFinite(Number(value))?null:Number(value);
+ }
+ if(meta.average)return bucket.averageCounts[stat]?(bucket.averageSums[stat]||0)/bucket.averageCounts[stat]:null;
+ if(meta.max)return bucket.maxValues[stat]===undefined?null:bucket.maxValues[stat];
+ return bucket.sumCounts[stat]?(bucket.sums[stat]||0):null;
+}
+async function buildRecordsIndex(){
+ const index=createRecordsIndex();
+ const careers={ALL:new Map(),REG:new Map(),POST:new Map()};
+ const skipped=[];
+ const stats=Object.keys(metrics);
+ for(let yearIndex=0;yearIndex<YEARS.length;yearIndex++){
+  const year=YEARS[yearIndex];
+  $('recordsStatus').textContent='Scanning historical records: '+year+' ('+(yearIndex+1)+' of '+YEARS.length+' seasons)…';
+  try{
+   const response=await fetch('./data/stats_player_week_'+year+'.csv',{cache:'default'});
+   if(!response.ok)throw new Error('HTTP '+response.status);
+   const csv=await response.text();
+   if(csv.trimStart().startsWith('<'))throw new Error('Received HTML instead of CSV');
+   const rows=parseCSV(csv).map(normalize).filter(row=>row.season===year&&row.week>=1&&row.week<=22&&row.player);
+   for(const phase of ['ALL','REG','POST']){
+    const phaseRows=phase==='ALL'?rows:rows.filter(row=>phaseMatches(row,phase));
+    if(!phaseRows.length)continue;
+    const playerGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player));
+    const careerMap=careers[phase];
+    for(const [playerKey,playerRows] of playerGroups){
+     if(!playerKey)continue;
+     let bucket=careerMap.get(playerKey);
+     if(!bucket){bucket=newCareerBucket(playerRows);careerMap.set(playerKey,bucket)}
+     addCareerSeason(bucket,playerRows,year);
+     for(const stat of stats){
+      const entry=createRecordEntry(playerRows,year,'season',stat,phase);
+      if(entry)addTopRecord(index,'season',phase,stat,entry);
+     }
+    }
+    const weeklyGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player)+'|'+row.week+'|'+(phase==='ALL'?row.season_type:phase));
+    for(const weeklyRows of weeklyGroups.values()){
+     for(const stat of stats){
+      const entry=createRecordEntry(weeklyRows,year,'weekly',stat,phase);
+      if(entry)addTopRecord(index,'weekly',phase,stat,entry);
+     }
+    }
+   }
+  }catch(error){
+   skipped.push(year);
+  }
+  await new Promise(resolve=>setTimeout(resolve,0));
+ }
+ if(!YEARS.some(year=>!skipped.includes(year)))throw new Error('No historical player-week seasons could be loaded.');
+ for(const phase of ['ALL','REG','POST']){
+  for(const bucket of careers[phase].values()){
+   const seasons=[...bucket.seasons].sort((a,b)=>a-b);
+   if(!seasons.length)continue;
+   for(const stat of stats){
+    const value=careerRecordValue(bucket,stat);
+    if(value===null||value===undefined||!Number.isFinite(Number(value)))continue;
+    addTopRecord(index,'career',phase,stat,{
+     player:bucket.player,
+     team:[...bucket.teams].filter(Boolean).join(', ')||'—',
+     value:Number(value),
+     scope:'Career · '+seasons[0]+'–'+seasons[seasons.length-1],
+     year:seasons[seasons.length-1],
+     week:null,
+     weeks:bucket.weeks.size,
+     seasons:seasons.length
+    });
+   }
+  }
+ }
+ return {index:index,loaded:YEARS.length-skipped.length,skipped:skipped};
+}
+function setupRecordsControls(){
+ const metric=$('recordsMetric');
+ metric.innerHTML=Object.entries(metrics).sort((a,b)=>a[1].label.localeCompare(b[1].label)).map(entry=>'<option value="'+esc(entry[0])+'">'+esc(entry[1].label)+'</option>').join('');
+ metric.value='passing_yards';
+ ['recordsMetric','recordsMode','recordsPhase','recordsLimit'].forEach(id=>$(id).addEventListener('change',renderRecords));
+}
+async function renderRecords(){
+ const renderId=++recordsRenderSequence;
+ const status=$('recordsStatus'),results=$('recordsResults');
+ status.textContent=recordsIndex?'Updating records view…':'Preparing historical records…';
+ if(!recordsIndex){
+  if(!recordsBuildPromise){
+   recordsBuildPromise=buildRecordsIndex().then(result=>{
+    recordsIndex=result.index;
+    recordsCoverageYears=result.loaded;
+    recordsSkippedYears=result.skipped;
+   }).catch(error=>{
+    recordsBuildPromise=null;
+    throw error;
+   });
+  }
+  try{await recordsBuildPromise}catch(error){
+   if(renderId!==recordsRenderSequence)return;
+   status.textContent='Could not build records: '+error.message;
+   results.innerHTML='<div class="notice">Historical records could not be loaded. Check that the player-week CSV files are published.</div>';
+   return;
+  }
+ }
+ if(renderId!==recordsRenderSequence)return;
+ const stat=$('recordsMetric').value,mode=$('recordsMode').value,phase=$('recordsPhase').value,limit=+$('recordsLimit').value||25;
+ const modeLabels={weekly:'Weekly record',season:'Single-season record',career:'Career record'};
+ const list=((recordsIndex[mode]||{})[phase]||{})[stat]||[];
+ const extra=recordsSkippedYears.length?(' Missing seasons: '+recordsSkippedYears.join(', ')+'.'):'';
+ status.textContent='Scanned '+recordsCoverageYears+' of '+YEARS.length+' seasons. Showing the highest '+Math.min(limit,list.length)+' available records.'+extra;
+ const heading='Most '+metrics[stat].label.toLowerCase()+' · '+modeLabels[mode];
+ if(!list.length){
+  results.innerHTML='<div class="notice">No tracked values were found for this statistic and season phase. Try another statistic or phase.</div>';
+  return;
+ }
+ const tableRows=list.slice(0,limit).map((entry,index)=>{
+  const coverage=mode==='weekly'?'1 week':mode==='season'?entry.weeks+' weeks':entry.seasons+' seasons · '+entry.weeks+' weeks';
+  return '<tr><td class="rank">'+(index+1)+'</td><td><b>'+esc(entry.player)+'</b></td><td>'+esc(entry.team)+'</td><td><b>'+esc(fmt(entry.value,stat))+'</b></td><td>'+esc(entry.scope)+'</td><td>'+esc(coverage)+'</td></tr>';
+ }).join('');
+ results.innerHTML='<div class="panel-head" style="margin-top:14px"><h3>'+esc(heading)+'</h3><span class="tag">'+esc(recordPhaseLabel(phase))+'</span></div><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team(s)</th><th>'+esc(metrics[stat].label)+'</th><th>Record scope</th><th>Coverage</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>';
+}
+
+function init(){ setupStatAdders(); setupRecordsControls(); populateSeasonDropdown('year',2026);$('calendarTimezone').value=localStorage.getItem('nflCalendarTimezone')||'Europe/London';
+$('viewTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{view=b.dataset.view;$('viewTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));const league=['afcstandings','nfcstandings'].includes(view),bracket=view==='playoffbracket',draft=view==='draftorder',teamstats=view==='teamstats',factgen=view==='factgen',recordsView=view==='records';$('mainPanel').classList.toggle('hidden',view==='calendar'||league||bracket||draft||teamstats||factgen||recordsView||view==='playercompare'||view==='teamcompare');$('comparePanel').classList.toggle('hidden',view!=='playercompare');$('teamComparePanel').classList.toggle('hidden',view!=='teamcompare');$('calendarPanel').classList.toggle('hidden',view!=='calendar');$('leaguePanel').classList.toggle('hidden',!league);$('bracketPanel').classList.toggle('hidden',!bracket);$('draftPanel').classList.toggle('hidden',!draft);$('factPanel').classList.toggle('hidden',!factgen);$('recordsPanel').classList.toggle('hidden',!recordsView);$('teamStatsPanel').classList.toggle('hidden',!teamstats);document.querySelector('.lower').classList.toggle('hidden',view==='teamcompare'||view==='calendar'||league||bracket||draft||teamstats||factgen||recordsView);if(recordsView){renderRecords()}else if(teamstats){loadTeamStats().then(renderTeamStats);$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('calendarPanel').classList.add('hidden');$('leaguePanel').classList.add('hidden');$('bracketPanel').classList.add('hidden');$('draftPanel').classList.add('hidden');}else if(view==='calendar'){$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('leaguePanel').classList.add('hidden');$('bracketPanel').classList.add('hidden');$('draftPanel').classList.add('hidden');renderCalendar();}else if(league||bracket){$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('draftPanel').classList.add('hidden');renderLeague();}else if(draft){$('mainPanel').classList.add('hidden');$('comparePanel').classList.add('hidden');$('teamComparePanel').classList.add('hidden');$('leaguePanel').classList.add('hidden');$('bracketPanel').classList.add('hidden');renderDraftOrder()}else{render()}});
 ['leagueYear','bracketYear'].forEach(id=>$(id).addEventListener('change',renderLeague));$('draftYear').addEventListener('change',renderDraftOrder);['calendarYear','calendarWeek','calendarTeam'].forEach(id=>$(id).addEventListener('change',()=>{if(id==='calendarYear'){$('calendarWeek').value='';}renderCalendar()}));
 $('calendarTimezone').addEventListener('change',()=>{localStorage.setItem('nflCalendarTimezone',$('calendarTimezone').value);renderCalendar()});['metric','team','position'].forEach(id=>$(id).addEventListener('change',render));['teamStatMetric','teamStatsPhase','teamStatsTeam'].forEach(id=>$(id).addEventListener('change',renderTeamStats));$('playerSearch').addEventListener('input',render);$('year').addEventListener('change',()=>{selectedWeeks=[];loadData()});$('phase').addEventListener('change',()=>{selectedWeeks=[];updateSelectors(true);render()});$('weekSelect').addEventListener('change',()=>{week=+$('weekSelect').value;selectedWeeks=[week];renderWeeks();render()});$('addComparisonBtn').onclick=()=>{if(comparisonCount<12){comparisonCount++;renderComparisonCards()}else $('comparisonMessage').textContent='Maximum of 12 players per comparison.'};$('removeComparisonBtn').onclick=()=>{if(comparisonCount>2){comparisonCount--;renderComparisonCards()}};$('refreshBtn').onclick=()=>{loadData();loadSchedule()};$('upload').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{raw=parseCSV(await f.text()).map(normalize).filter(r=>r.player);updateSelectors(true);fillSuggestions();renderComparisonCards();setupTeamCompare();setStatus(`Loaded ${raw.length.toLocaleString()} rows from ${f.name}.`,'good');render()}catch(err){setStatus('Could not read CSV: '+err.message,'bad')}};$('exportBtn').onclick=()=>{const k=$('metric').value,data=sortData(currentData()),cols=['player','team','position','season','season_type','week',k],csv=[cols.join(','),...data.map(r=>cols.map(c=>'"'+String(r[c]??'').replace(/"/g,'""')+'"').join(','))].join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`nfl-${$('year').value}-${view}-${k}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$('generateFactsBtn').onclick=renderFactGenerator;$('factMetric').onchange=renderFactGenerator;$('buildContentPackBtn').onclick=buildContentPack;$('copyContentPackBtn').onclick=()=>{if(!$('contentPackOutput').value.trim())buildContentPack();const txt=$('contentPackOutput').value;if(!txt){$('contentStudioNotice').textContent='Build a content pack first.';return}const fallback=()=>{$('contentPackOutput').focus();$('contentPackOutput').select();$('contentStudioNotice').textContent='Clipboard was unavailable. The text is selected so you can copy it manually.'};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>{$('contentStudioNotice').textContent='Content pack copied.'}).catch(fallback)}else fallback()};$('downloadFactCardBtn').onclick=downloadFactCard;$('factPlayers').onchange=renderFactGenerator;$('factTeams').onchange=renderFactGenerator;$('factCount').onchange=renderFactGenerator;$('copyFactsBtn').onclick=()=>{const txt=(window.generatedNFLFacts||[]).join('\\n');if(!txt){setStatus('Generate facts first.','bad');return}navigator.clipboard?.writeText(txt).then(()=>setStatus('Facts copied.','good')).catch(()=>setStatus('Clipboard unavailable; select and copy the facts manually.','bad'))};loadData();loadSchedule()}
 init();
