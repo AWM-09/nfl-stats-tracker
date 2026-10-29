@@ -1029,47 +1029,55 @@ function careerRecordValue(bucket,stat){
 async function buildRecordsIndex(){
  const index=createRecordsIndex();
  const careers={ALL:new Map(),REG:new Map(),POST:new Map()};
- const skipped=[];
- const stats=Object.keys(metrics);
- for(let yearIndex=0;yearIndex<YEARS.length;yearIndex++){
-  const year=YEARS[yearIndex];
-  $('recordsStatus').textContent='Scanning historical records: '+year+' ('+(yearIndex+1)+' of '+YEARS.length+' seasons)…';
+ const stats=Object.keys(metrics),phases=['ALL','REG','POST'];
+ const skipped=[],loaded=[];
+ $('recordsStatus').textContent='Loading '+YEARS.length+' seasons in parallel…';
+ // Fetch files concurrently; the old implementation waited for each season in sequence.
+ const fetched=await Promise.all(YEARS.map(async year=>{
   try{
-   const response=await fetch('./data/stats_player_week_'+year+'.csv',{cache:'default'});
+   const response=await fetch('./data/stats_player_week_'+year+'.csv',{cache:'force-cache'});
    if(!response.ok)throw new Error('HTTP '+response.status);
    const csv=await response.text();
-   if(csv.trimStart().startsWith('<'))throw new Error('Received HTML instead of CSV');
+   if(!csv.trim()||csv.trimStart().startsWith('<'))throw new Error('Missing or invalid CSV');
    const rows=parseCSV(csv).map(normalize).filter(row=>row.season===year&&row.week>=1&&row.week<=22&&row.player);
-   for(const phase of ['ALL','REG','POST']){
-    const phaseRows=phase==='ALL'?rows:rows.filter(row=>phaseMatches(row,phase));
-    if(!phaseRows.length)continue;
-    const playerGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player));
-    const careerMap=careers[phase];
-    for(const [playerKey,playerRows] of playerGroups){
-     if(!playerKey)continue;
-     let bucket=careerMap.get(playerKey);
-     if(!bucket){bucket=newCareerBucket(playerRows);careerMap.set(playerKey,bucket)}
-     addCareerSeason(bucket,playerRows,year);
-     for(const stat of stats){
-      const entry=createRecordEntry(playerRows,year,'season',stat,phase);
-      if(entry)addTopRecord(index,'season',phase,stat,entry);
-     }
-    }
-    const weeklyGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player)+'|'+row.week+'|'+(phase==='ALL'?row.season_type:phase));
-    for(const weeklyRows of weeklyGroups.values()){
-     for(const stat of stats){
-      const entry=createRecordEntry(weeklyRows,year,'weekly',stat,phase);
-      if(entry)addTopRecord(index,'weekly',phase,stat,entry);
-     }
+   if(!rows.length)throw new Error('No valid player-week rows');
+   return {year,rows};
+  }catch(error){return {year,error:String(error)}}
+ }));
+ const available=fetched.filter(item=>item.rows);
+ skipped.push(...fetched.filter(item=>!item.rows).map(item=>item.year));
+ if(!available.length)throw new Error('No historical player-week seasons could be loaded.');
+ for(let yearIndex=0;yearIndex<available.length;yearIndex++){
+  const {year,rows}=available[yearIndex];
+  loaded.push(year);
+  $('recordsStatus').textContent='Calculating records: '+year+' ('+(yearIndex+1)+' of '+available.length+' available seasons)…';
+  for(const phase of phases){
+   const phaseRows=phase==='ALL'?rows:rows.filter(row=>phaseMatches(row,phase));
+   if(!phaseRows.length)continue;
+   const playerGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player));
+   const careerMap=careers[phase];
+   for(const [playerKey,playerRows] of playerGroups){
+    if(!playerKey)continue;
+    let bucket=careerMap.get(playerKey);
+    if(!bucket){bucket=newCareerBucket(playerRows);careerMap.set(playerKey,bucket)}
+    addCareerSeason(bucket,playerRows,year);
+    for(const stat of stats){
+     const entry=createRecordEntry(playerRows,year,'season',stat,phase);
+     if(entry)addTopRecord(index,'season',phase,stat,entry);
     }
    }
-  }catch(error){
-   skipped.push(year);
+   const weeklyGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player)+'|'+row.week+'|'+(phase==='ALL'?row.season_type:phase));
+   for(const weeklyRows of weeklyGroups.values()){
+    for(const stat of stats){
+     const entry=createRecordEntry(weeklyRows,year,'weekly',stat,phase);
+     if(entry)addTopRecord(index,'weekly',phase,stat,entry);
+    }
+   }
   }
-  await new Promise(resolve=>setTimeout(resolve,0));
+  // Yield only between seasons so the browser can update progress without adding a fixed delay per request.
+  await new Promise(resolve=>requestAnimationFrame(resolve));
  }
- if(!YEARS.some(year=>!skipped.includes(year)))throw new Error('No historical player-week seasons could be loaded.');
- for(const phase of ['ALL','REG','POST']){
+ for(const phase of phases){
   for(const bucket of careers[phase].values()){
    for(const stat of stats){
     const seasons=[...(bucket.metricYears[stat]||new Set())].sort((a,b)=>a-b);
@@ -1077,19 +1085,14 @@ async function buildRecordsIndex(){
     const value=careerRecordValue(bucket,stat);
     if(value===null||value===undefined||!Number.isFinite(Number(value)))continue;
     addTopRecord(index,'career',phase,stat,{
-     player:bucket.player,
-     team:[...bucket.teams].filter(Boolean).join(', ')||'—',
-     value:Number(value),
+     player:bucket.player,team:[...bucket.teams].filter(Boolean).join(', ')||'—',value:Number(value),
      scope:'Career · '+seasons[0]+'–'+seasons[seasons.length-1]+' ('+seasons.length+' seasons with data)',
-     year:seasons[seasons.length-1],
-     week:null,
-     weeks:(bucket.metricWeeks[stat]||new Set()).size,
-     seasons:seasons.length
+     year:seasons[seasons.length-1],week:null,weeks:(bucket.metricWeeks[stat]||new Set()).size,seasons:seasons.length
     });
    }
   }
  }
- return {index:index,loaded:YEARS.length-skipped.length,skipped:skipped};
+ return {index,loaded:loaded.length,loadedYears:loaded,skipped};
 }
 function setupRecordsControls(){
  const metric=$('recordsMetric');
