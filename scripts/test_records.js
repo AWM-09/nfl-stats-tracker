@@ -91,6 +91,22 @@ test('zero placeholders are excluded from most-volume records', () => {
  assert.equal(index.season.REG.passing_yards.length,1);
  assert.equal(index.season.REG.passing_yards[0].player,'Passer');
 });
+
+test('Records index retains the correct top 50 in descending order', () => {
+ const index=sandbox.createRecordsIndex();
+ for(let value=1;value<=100;value++){
+  sandbox.addTopRecord(index,'season','REG','passing_yards',{
+   value,player:'Player '+String(value).padStart(3,'0'),year:2025
+  });
+ }
+ const list=index.season.REG.passing_yards;
+ assert.equal(list.length,50,'Index should retain only the visible maximum of 50 records');
+ assert.equal(Number(list[0].value),100,'Highest value should rank first');
+ assert.equal(Number(list[49].value),51,'Fiftieth value should be correct');
+ for(let i=1;i<list.length;i++){
+  assert.ok(Number(list[i-1].value)>=Number(list[i].value),'Ranking order should be descending');
+ }
+});
 test('untracked drop data is not converted to a zero-percent record', () => {
  assert.equal(sandbox.metricValue(row({targets:'20'}),'receiving_drop_pct'),null);
  assert.equal(sandbox.recordAggregateValue([row({targets:'20'})],'receiving_drop_pct','season'),null);
