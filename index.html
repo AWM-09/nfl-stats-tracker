@@ -1132,6 +1132,7 @@ async function buildRecordsIndex(){
   // Let the season rows be collected before the next CSV is parsed.
   rows=null;
   await yieldToHost();
+  if(typeof gc==='function')gc();
  }
  if(!loaded.length)throw new Error('No historical player-week seasons could be loaded.');
  for(const phase of phases){
