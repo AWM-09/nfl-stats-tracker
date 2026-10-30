@@ -1,3 +1,12 @@
+## 2026-10-30
+
+- Added a dedicated platform homepage that organises all existing tools into a clear navigation structure; moved the original weekly dashboard to `tracker.html`.
+- Added shareable Player Profiles with season-by-season summaries, career totals where tracked, progression charts and on-demand game logs for a selected season.
+- Extended the historical Records build to generate the compact player-season index in the same pass, avoiding a second download/parse of the 2000–2026 weekly files.
+- Added a System Health Centre backed by a build-generated manifest covering player, team, advanced-team and play-by-play datasets, Records and Player Profile indexes, and schedule data.
+- Added published-site integration tests for required pages, local links, mobile metadata, generated indexes, health manifest and build metadata.
+- Added consistent Home, Player Profiles and System Health navigation to the existing tools, with shared mobile layout improvements.
+
 # Changelog
 
 ## 2026-10-29

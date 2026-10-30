@@ -6,13 +6,13 @@ const vm = require('node:vm');
 
 const root = process.cwd();
 const dataDir = path.join(root, 'data');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'tracker.html'), 'utf8');
 const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
   .find(item => item[1].includes('function recordAggregateValue') &&
                 item[1].includes('function metricValue'));
 
 if (!match) {
-  throw new Error('Could not extract the Records calculation code from index.html.');
+  throw new Error('Could not extract the Records calculation code from tracker.html.');
 }
 
 // Reuse the dashboard's tested calculations so the fast index and the browser
@@ -48,7 +48,8 @@ const sandbox = vm.createContext({
   window: {},
   localStorage: { getItem() { return null; }, setItem() {} },
   fetch: localDataFetch,
-  requestAnimationFrame(callback) { setImmediate(callback); }
+  requestAnimationFrame(callback) { setImmediate(callback); },
+  gc: typeof global.gc === 'function' ? global.gc : undefined
 });
 
 vm.runInNewContext(source, sandbox, { timeout: 20000 });
@@ -85,11 +86,26 @@ vm.runInNewContext(source, sandbox, { timeout: 20000 });
   const outputPath = path.join(dataDir, 'records-index.json');
   fs.writeFileSync(outputPath, JSON.stringify(output), 'utf8');
 
+  const playerOutput = {
+    version: 1,
+    generated_at: output.generated_at,
+    loaded: result.loaded,
+    loaded_years: result.loadedYears || [],
+    skipped: result.skipped || [],
+    metrics: ['passing_yards','passing_tds','passing_interceptions','completion_pct','passer_rating','pass_yards_per_attempt','passing_epa','passing_cpoe','passing_success_rate','average_time_to_throw','sacks_suffered','rushing_yards','carries','rushing_tds','rushing_yards_per_carry','rushing_success_rate','receiving_yards','receptions','targets','receiving_tds','catch_rate','average_depth_of_target','receiving_epa','def_sacks','def_interceptions','def_tackles_solo','def_tackles_with_assist','def_tackles_for_loss','def_qb_hits','def_forced_fumbles','def_fumble_recoveries','def_tds','fg_made','fg_attempts','fg_pct','fg_long','punting_avg','kick_return_yards','kick_return_avg','punt_return_yards'],
+    players: result.players || []
+  };
+  const playerPath = path.join(dataDir, 'player-index.json');
+  fs.writeFileSync(playerPath, JSON.stringify(playerOutput), 'utf8');
+
   const bytes = fs.statSync(outputPath).size;
+  const playerBytes = fs.statSync(playerPath).size;
   console.log(
     'Precomputed records index: ' + result.loaded + ' seasons, ' +
     retainedEntries.toLocaleString('en-US') + ' ranked entries, ' +
-    bytes.toLocaleString('en-US') + ' bytes.'
+    bytes.toLocaleString('en-US') + ' bytes. Player profiles: ' +
+    playerOutput.players.length.toLocaleString('en-US') + ' players, ' +
+    playerBytes.toLocaleString('en-US') + ' bytes.'
   );
   if (!result.loadedYears || !result.loadedYears.length) {
     throw new Error('Records index contains no loaded season metadata.');

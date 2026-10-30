@@ -326,7 +326,7 @@ jobs:
           PY
 
       - name: Precompute Records index for fast browser loading
-        run: node scripts/build-records-index.js
+        run: node --expose-gc scripts/build-records-index.js
 
       - name: Download NFL schedule and scores
         shell: bash
@@ -385,6 +385,9 @@ jobs:
           set -euo pipefail
           mkdir -p site/data
           cp index.html site/index.html
+          cp tracker.html site/tracker.html
+          cp player.html site/player.html
+          cp health.html site/health.html
           cp research.html site/research.html
           test -s site/research.html
           cp favicon.svg site/favicon.svg
@@ -399,6 +402,8 @@ jobs:
           cp data/stats_player_week_*.csv site/data/
           cp data/records-index.json site/data/records-index.json
           test -s site/data/records-index.json
+          cp data/player-index.json site/data/player-index.json
+          test -s site/data/player-index.json
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
           for year in 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
@@ -408,7 +413,7 @@ jobs:
           python3 - <<'PY'
           import os, re
           from pathlib import Path
-          path = Path("site/index.html")
+          path = Path("site/tracker.html")
           html = path.read_text(encoding="utf-8")
           build_id = os.environ.get("GITHUB_RUN_ID", "records-v1")
           html, replaced = re.subn(
@@ -418,15 +423,14 @@ jobs:
           )
           if replaced != 1:
               raise SystemExit("Could not version the dashboard build/cache key.")
-          old_tab = '<button class="tab" data-view="calendar">NFL Calendar</button>'
-          new_tab = '<a class="tab" href="./calendar.html">NFL Calendar &amp; Predictor ↗</a>'
-          if old_tab in html:
-              html = html.replace(old_tab, new_tab, 1)
-              path.write_text(html, encoding="utf-8")
-              print("Linked main tracker to the new calendar and predictor.")
-          else:
-              print("Calendar tab text was not found; leaving index.html unchanged.")
+          if 'href="./calendar.html"' not in html:
+              raise SystemExit("The main tracker is missing its Calendar link.")
+          path.write_text(html, encoding="utf-8")
+          print("Verified the main tracker Calendar link and refreshed its build cache key.")
           PY
+
+      - name: Build published data health manifest
+        run: node scripts/build_site_manifest.js
 
       - name: Generate build metadata
         env:
@@ -437,17 +441,25 @@ jobs:
           import json, os
           from datetime import datetime, timezone
           from pathlib import Path
+          manifest = json.loads(Path("site/data/site-manifest.json").read_text(encoding="utf-8"))
           info = {
               "generated_at": datetime.now(timezone.utc).isoformat(),
               "commit": os.environ.get("BUILD_COMMIT", ""),
               "workflow_run_id": os.environ.get("BUILD_RUN_ID", ""),
               "data_seasons": "2000–2026",
               "source": "nflverse weekly player statistics, schedule and play-by-play-derived summaries",
-              "play_by_play_delivery": "gzip-compressed static CSV files"
+              "play_by_play_delivery": "gzip-compressed static CSV files",
+              "player_profiles": manifest.get("players_indexed", 0),
+              "player_seasons": manifest.get("player_seasons", 0),
+              "data_health": manifest.get("status", "unknown"),
+              "files_checked": manifest.get("files_checked", 0)
           }
           Path("site/build-info.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
           print("Wrote build metadata for commit", info["commit"])
           PY
+
+      - name: Run published site integration checks
+        run: node scripts/test_site.js
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
