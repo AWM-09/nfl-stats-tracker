@@ -890,8 +890,8 @@ function aggregateRecordColumns(rows){
  }));
  return totals;
 }
-function recordAggregateValue(rows,stat,mode){
- rows=rowsWithRecordMetricData(rows,stat);
+function recordAggregateValue(rows,stat,mode,rowsAlreadyFiltered=false){
+ if(!rowsAlreadyFiltered)rows=rowsWithRecordMetricData(rows,stat);
  if(!rows.length||!metrics[stat])return null;
  const meta=metrics[stat];
  if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
@@ -935,7 +935,7 @@ function addTopRecord(index,mode,phase,stat,entry){
  if(Number(entry.value)===0&&meta&&(meta.sum||meta.max||meta.fumblesRecovered||(meta.derived&&!RECORD_RATIO_STATS.has(stat))))return;
  const list=index[mode][phase][stat];
  // Keep the highest 100 with binary insertion instead of repeatedly sorting.
- if(list.length>=100&&compareRecordEntries(list[list.length-1],entry)<=0)return;
+ if(list.length>=50&&compareRecordEntries(list[list.length-1],entry)<=0)return;
  let low=0,high=list.length;
  while(low<high){
   const mid=(low+high)>>1;
@@ -943,11 +943,11 @@ function addTopRecord(index,mode,phase,stat,entry){
   else high=mid;
  }
  list.splice(low,0,entry);
- if(list.length>100)list.pop();
+ if(list.length>50)list.pop();
 }
 function createRecordEntry(rows,year,mode,stat,phase){
  const metricRows=rowsWithRecordMetricData(rows,stat);
- const value=recordAggregateValue(metricRows,stat,mode);
+ const value=recordAggregateValue(metricRows,stat,mode,true);
  if(value===null)return null;
  const player=rows[0].player||'Unknown player';
  const teams=[...new Set(metricRows.map(row=>teamName(row.team)).filter(team=>team&&team!=='—'))];
