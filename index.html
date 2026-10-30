@@ -1029,9 +1029,43 @@ function careerRecordValue(bucket,stat){
  if(meta.max)return bucket.maxValues[stat]===undefined?null:bucket.maxValues[stat];
  return bucket.sumCounts[stat]?(bucket.sums[stat]||0):null;
 }
+const PROFILE_METRICS=[
+ 'passing_yards','passing_tds','passing_interceptions','completion_pct','passer_rating','pass_yards_per_attempt','passing_epa','passing_cpoe',
+ 'rushing_yards','carries','rushing_tds','rushing_yards_per_carry',
+ 'receiving_yards','receptions','targets','receiving_tds','catch_rate','average_depth_of_target','receiving_epa',
+ 'def_sacks','def_interceptions','def_tackles_solo','def_tackles_with_assist','def_tackles_for_loss','def_qb_hits','def_forced_fumbles','def_fumble_recoveries','def_tds',
+ 'fg_made','fg_attempts','fg_pct','fg_long','punting_avg','kick_return_yards','kick_return_avg','punt_return_yards'
+];
+function addPlayerProfileSeason(profiles,playerKey,rows,year){
+ if(!rows.length)return;
+ const firstRow=rows[0];
+ let profile=profiles.get(playerKey);
+ if(!profile){
+  profile={
+   key:playerKey,
+   id:String(first(firstRow,['player_id','gsis_id'])||''),
+   name:firstRow.player||'Unknown player',
+   position:firstRow.position||'—',
+   seasons:[]
+  };
+  profiles.set(playerKey,profile);
+ }
+ const teams=[...new Set(rows.map(row=>teamName(row.team)).filter(Boolean))].sort();
+ const games=new Set(rows.map(row=>String(row.game_id||(String(row.season_type||'REG')+'-'+row.week))));
+ const stats={};
+ for(const stat of PROFILE_METRICS){
+  const value=recordAggregateValue(rows,stat,'season');
+  if(value!==null&&value!==undefined&&Number.isFinite(Number(value)))stats[stat]=Number(Number(value).toFixed(3));
+ }
+ profile.id=String(first(firstRow,['player_id','gsis_id'])||profile.id);
+ profile.name=firstRow.player||profile.name;
+ profile.position=firstRow.position||profile.position;
+ profile.seasons.push({season:year,teams,position:profile.position,games:games.size,stats});
+}
 async function buildRecordsIndex(){
  const index=createRecordsIndex();
  const careers={ALL:new Map(),REG:new Map(),POST:new Map()};
+ const playerProfiles=new Map();
  const stats=Object.keys(metrics),phases=['ALL','REG','POST'];
  const skipped=[],loaded=[];
  const yieldToHost=()=>new Promise(resolve=>{
@@ -1070,6 +1104,7 @@ async function buildRecordsIndex(){
    const careerMap=careers[phase];
    for(const [playerKey,playerRows] of playerGroups){
     if(!playerKey)continue;
+    if(phase==='ALL')addPlayerProfileSeason(playerProfiles,playerKey,playerRows,year);
     let bucket=careerMap.get(playerKey);
     if(!bucket){bucket=newCareerBucket(playerRows);careerMap.set(playerKey,bucket)}
     addCareerSeason(bucket,playerRows,year);
@@ -1114,7 +1149,8 @@ async function buildRecordsIndex(){
    }
   }
  }
- return {index,loaded:loaded.length,loadedYears:loaded,skipped};
+ const players=[...playerProfiles.values()].sort((a,b)=>a.name.localeCompare(b.name));
+ return {index,loaded:loaded.length,loadedYears:loaded,skipped,players};
 }
 function setupRecordsControls(){
  const metric=$('recordsMetric');
