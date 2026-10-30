@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09111a">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=1">
+<title>NFL Data & System Health | AlexMyrusTalksSports</title>
+<style>
+:root{color-scheme:dark;--bg:#09111a;--panel:#111e2b;--line:#2a4052;--text:#eef5fa;--muted:#9db0bf;--accent:#71d6b3;--gold:#f1c46b;--red:#ff9292}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#17374a 0,transparent 42%),var(--bg);color:var(--text);font:14px/1.55 Inter,system-ui,sans-serif}main{max-width:1250px;margin:auto;padding:22px 16px 48px}
+a{color:var(--accent)}.top,.actions,.row,.panel-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.top,.panel-head{justify-content:space-between}.eyebrow{font-size:11px;letter-spacing:.15em;color:var(--accent);font-weight:850;text-transform:uppercase}.title{font-size:clamp(30px,4vw,43px);letter-spacing:-.04em;margin:5px 0;font-weight:900}.muted,.note{color:var(--muted)}.subtitle{max-width:760px;color:var(--muted)}.actions a{display:inline-flex;padding:8px 10px;border:1px solid var(--line);border-radius:9px;text-decoration:none;color:var(--muted)}
+.panel,.card{background:linear-gradient(155deg,rgba(23,40,56,.98),rgba(14,26,38,.98));border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0;min-width:0}.hero-status{display:flex;align-items:center;gap:12px;padding:18px;border:1px solid var(--line);border-radius:13px;background:#10202c}.dot{width:12px;height:12px;border-radius:50%;background:var(--gold);flex:none}.dot.good{background:var(--accent)}.dot.bad{background:var(--red)}.hero-status h2{font-size:20px;margin:0}.hero-status p{color:var(--muted);margin:3px 0 0}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.label{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.08em;text-transform:uppercase}.value{font-size:26px;font-weight:900;margin:6px 0}.status-list{display:grid;gap:8px}.status-item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#0d1924}.status-item strong{display:block}.status-item small{display:block;color:var(--muted);margin-top:2px}.badge{font-size:10px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:4px 8px;background:#1f473b;color:var(--accent);white-space:nowrap}.badge.bad{background:#46252a;color:var(--red)}.badge.warn{background:#4b4025;color:var(--gold)}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{border-collapse:collapse;width:100%;min-width:520px}th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #263949}th{font-size:11px;color:var(--muted);text-transform:uppercase;background:#0d1924}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}.notice{padding:12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}@media(max-width:850px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:540px){main{padding:14px 9px 32px}.panel,.card{padding:12px}.actions a{padding:7px 8px}.hero-status{align-items:flex-start}.value{font-size:22px}}
+</style>
+</head>
+<body><main>
+<header class="top"><div><div class="eyebrow">AlexMyrusTalksSports · reliability</div><h1 class="title">System <span style="color:var(--accent)">Health Centre</span></h1><p class="subtitle">A build-generated audit of published datasets, season coverage and deployment metadata. A healthy status means the expected data files passed the checks run during the latest site build.</p></div><nav class="actions" aria-label="Main navigation"><a href="./index.html">Home</a><a href="./tracker.html">Stats Tracker</a><a href="./player.html">Player Profiles</a><a href="./research.html">Research Lab</a><a href="./advanced.html">Advanced Lab</a></nav></header>
+<section class="hero-status"><span class="dot" id="healthDot"></span><div><h2 id="healthTitle">Checking published data…</h2><p id="healthMessage">Reading the build manifest.</p></div></section>
+<section class="kpis"><div class="card"><div class="label">Build time (London)</div><div class="value" id="buildTime">—</div><div class="note" id="buildDate">—</div></div><div class="card"><div class="label">Player index</div><div class="value" id="playerCount">—</div><div class="note">Searchable player profiles</div></div><div class="card"><div class="label">Indexed player seasons</div><div class="value" id="playerSeasons">—</div><div class="note">Season summaries generated</div></div><div class="card"><div class="label">Files checked</div><div class="value" id="filesChecked">—</div><div class="note" id="totalBytes">—</div></div></section>
+<section class="panel"><div class="panel-head"><h2>Dataset checks</h2><span class="badge" id="manifestBadge">Checking</span></div><div class="status-list" id="checks"><div class="notice">Loading dataset manifest…</div></div></section>
+<section class="panel"><div class="panel-head"><h2>Season coverage</h2><span class="note">Expected range: 2000–2026</span></div><div class="tablewrap"><table><thead><tr><th>Dataset</th><th>Seasons</th><th class="num">Files</th><th class="num">Size</th><th>Status</th></tr></thead><tbody id="coverage"><tr><td colspan="5">Loading…</td></tr></tbody></table></div></section>
+<section class="panel"><h2>Deployment details</h2><div id="deploymentDetails" class="status-list"><div class="notice">Loading build metadata…</div></div></section>
+<section class="panel"><h2>What these checks mean</h2><p class="muted">The build checks that the expected source files exist, are non-empty and have recognisable headers; the records and player indexes are valid JSON and contain season metadata; and the published compressed play-by-play files are present. These checks cannot prove every statistic is correct or that every upstream source is error-free. Review metric definitions and coverage in the <a href="./research.html">Research Lab</a>.</p></section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const fmtBytes=n=>{const x=Number(n)||0;if(x<1024)return x+' B';if(x<1048576)return (x/1024).toFixed(1)+' KB';return (x/1048576).toFixed(2)+' MB';};
+const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+(async()=>{
+ try{
+  const [buildResponse,manifestResponse]=await Promise.all([fetch('./build-info.json',{cache:'no-store'}),fetch('./data/site-manifest.json',{cache:'no-store'})]);
+  if(!buildResponse.ok)throw new Error('Build information unavailable (HTTP '+buildResponse.status+').');
+  if(!manifestResponse.ok)throw new Error('Dataset manifest unavailable (HTTP '+manifestResponse.status+').');
+  const [build,manifest]=await Promise.all([buildResponse.json(),manifestResponse.json()]);
+  const healthy=manifest.status==='healthy'&&!manifest.missing_files?.length;
+  $('healthDot').classList.add(healthy?'good':'bad');
+  $('healthTitle').textContent=healthy?'All published data checks passed':'Data checks need attention';
+  $('healthMessage').textContent=healthy?'All required season files and generated indexes passed the latest build checks.':'Some expected files or validations were missing; see the details below.';
+  $('manifestBadge').textContent=healthy?'Healthy':'Degraded';$('manifestBadge').classList.toggle('bad',!healthy);
+  const date=build.generated_at?new Date(build.generated_at):null;
+  $('buildTime').textContent=date?date.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}):'—';
+  $('buildDate').textContent=date?date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'Europe/London'}):'Build date unknown';
+  $('playerCount').textContent=Number(manifest.players_indexed||0).toLocaleString();
+  $('playerSeasons').textContent=Number(manifest.player_seasons||0).toLocaleString();
+  $('filesChecked').textContent=Number(manifest.files_checked||0).toLocaleString();
+  $('totalBytes').textContent=fmtBytes(manifest.total_bytes||0)+' published data';
+  const checks=manifest.checks||[];
+  $('checks').innerHTML=checks.map(c=>'<div class="status-item"><div><strong>'+escapeHTML(c.name)+'</strong><small>'+escapeHTML(c.detail||'')+'</small></div><span class="badge '+(c.status==='passed'?'':'bad')+'">'+escapeHTML(c.status||'unknown')+'</span></div>').join('')||'<div class="notice">No individual check details were recorded.</div>';
+  $('coverage').innerHTML=(manifest.datasets||[]).map(d=>'<tr><td>'+escapeHTML(d.name)+'</td><td>'+escapeHTML(d.seasons||'—')+'</td><td class="num">'+Number(d.files||0).toLocaleString()+'</td><td class="num">'+fmtBytes(d.bytes||0)+'</td><td><span class="badge '+(d.status==='passed'?'':'bad')+'">'+escapeHTML(d.status||'unknown')+'</span></td></tr>').join('')||'<tr><td colspan="5">No coverage data found.</td></tr>';
+  const run=build.workflow_run_id?'<a href="https://github.com/AWM-09/nfl-stats-tracker/actions/runs/'+encodeURIComponent(build.workflow_run_id)+'" target="_blank" rel="noopener noreferrer">View GitHub Actions run ↗</a>':'No workflow run ID was recorded.';
+  const commit=build.commit?'<a href="https://github.com/AWM-09/nfl-stats-tracker/commit/'+encodeURIComponent(build.commit)+'" target="_blank" rel="noopener noreferrer">'+escapeHTML(build.commit.slice(0,12))+' ↗</a>':'—';
+  $('deploymentDetails').innerHTML='<div class="status-item"><div><strong>Commit</strong><small>Code version published</small></div>'+commit+'</div><div class="status-item"><div><strong>Workflow run</strong><small>Automated build and deployment</small></div>'+run+'</div><div class="status-item"><div><strong>Source</strong><small>'+escapeHTML(build.source||'—')+'</small></div></div><div class="status-item"><div><strong>Generated at</strong><small>'+escapeHTML(build.generated_at||'—')+'</small></div></div>';
+ }catch(error){$('healthDot').classList.add('bad');$('healthTitle').textContent='Health data unavailable';$('healthMessage').textContent=error.message;$('checks').innerHTML='<div class="notice">'+escapeHTML(error.message)+'</div>';}
+})();
+</script>
+</body></html>
