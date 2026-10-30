@@ -962,26 +962,20 @@ function createRecordEntry(rows,year,mode,stat,phase){
  return {player:player,team:teams.join(', ')||'—',value:Number(value),scope:scope,year:year,week:mode==='weekly'?Number(rows[0].week):null,weeks:weekKeys.length,seasons:1};
 }
 function newCareerBucket(rows){
- return {player:rows[0].player||'Unknown player',rawTotals:{},ratioTotals:{},sums:{},sumCounts:{},weightedAverageSums:{},weightedAverageWeights:{},averageSums:{},averageCounts:{},maxValues:{},metricYears:{},metricWeeks:{},seasons:new Set(),weeks:new Set(),teams:new Set()};
+ return {player:rows[0].player||'Unknown player',ratioTotals:{},sums:{},sumCounts:{},weightedAverageSums:{},weightedAverageWeights:{},maxValues:{},metricYears:{},metricWeeks:{},teams:new Set()};
 }
 function addCareerSeason(bucket,rows,year){
  if(!rows.length)return;
  bucket.player=rows[rows.length-1].player||bucket.player;
- bucket.seasons.add(year);
- rows.forEach(row=>{
-  bucket.weeks.add(String(year)+'|'+String(row.week)+'|'+String(row.season_type));
-  if(row.team)bucket.teams.add(teamName(row.team));
- });
- const rawYear=aggregateRecordColumns(rows);
- Object.entries(rawYear).forEach(([key,value])=>{
-  if(typeof value==='number'&&Number.isFinite(value))bucket.rawTotals[key]=(bucket.rawTotals[key]||0)+value;
-  else if(bucket.rawTotals[key]===undefined)bucket.rawTotals[key]=value;
- });
+ rows.forEach(row=>{if(row.team)bucket.teams.add(teamName(row.team))});
  function markCoverage(stat,validRows){
-  if(!bucket.metricYears[stat])bucket.metricYears[stat]=new Set();
-  if(!bucket.metricWeeks[stat])bucket.metricWeeks[stat]=new Set();
-  bucket.metricYears[stat].add(year);
-  validRows.forEach(row=>bucket.metricWeeks[stat].add(String(year)+'|'+String(row.week)+'|'+String(row.season_type)));
+  // Each player is processed once per season and phase, so compact counters
+  // replace per-player/per-metric Sets that consumed large amounts of heap.
+  const coverage=bucket.metricYears[stat]||(bucket.metricYears[stat]={first:year,last:year,count:0});
+  coverage.last=year;
+  coverage.count++;
+  const uniqueWeeks=new Set(validRows.map(row=>String(row.week)+'|'+String(row.season_type)));
+  bucket.metricWeeks[stat]=(bucket.metricWeeks[stat]||0)+uniqueWeeks.size;
  }
  Object.entries(metrics).forEach(([stat,meta])=>{
   const aggregateMetric=meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat));
@@ -1101,14 +1095,14 @@ async function buildRecordsIndex(){
  for(const phase of phases){
   for(const bucket of careers[phase].values()){
    for(const stat of stats){
-    const seasons=[...(bucket.metricYears[stat]||new Set())].sort((a,b)=>a-b);
-    if(!seasons.length)continue;
+    const coverage=bucket.metricYears[stat];
+    if(!coverage||!coverage.count)continue;
     const value=careerRecordValue(bucket,stat);
     if(value===null||value===undefined||!Number.isFinite(Number(value)))continue;
     addTopRecord(index,'career',phase,stat,{
      player:bucket.player,team:[...bucket.teams].filter(Boolean).join(', ')||'—',value:Number(value),
-     scope:'Career · '+seasons[0]+'–'+seasons[seasons.length-1]+' ('+seasons.length+' seasons with data)',
-     year:seasons[seasons.length-1],week:null,weeks:(bucket.metricWeeks[stat]||new Set()).size,seasons:seasons.length
+     scope:'Career · '+coverage.first+'–'+coverage.last+' ('+coverage.count+' seasons with data)',
+     year:coverage.last,week:null,weeks:bucket.metricWeeks[stat]||0,seasons:coverage.count
     });
    }
   }
