@@ -50,7 +50,7 @@ assert.ok(health.includes('./data/site-manifest.json'), 'Health Centre must load
 const toolContracts = {
   'advanced.html': {
     ids: ['overview','players','teams','situational','games','records','scenarios','content','playerPick','runScenario','fourthCalc'],
-    functions: ['renderPlayerCompare','renderTeamCompare','renderRecords','renderScenario','fourthDown','makeContent']
+    functions: ['renderPlayer','renderCareer','renderTeams','renderSituational','renderGames','renderRecords','renderScenario','fourthDown','makeContent']
   },
   'calendar.html': {
     ids: ['liveGames','calendarPanel','predictorPanel','gameList','detailPanel','plays'],
@@ -77,7 +77,7 @@ const toolContracts = {
     functions: ['runGame','runStreak','runQuality','runFranchise','runSeason','runSearch','renderPack']
   },
   'tracker.html': {
-    ids: ['viewTabs','recordsPanel','playercompare','teamcompare','factPanel','contentStudioPanel'],
+    ids: ['viewTabs','recordsPanel','comparePanel','teamComparePanel','factPanel','contentStudioPanel'],
     functions: ['loadData','renderPlayerCompare','renderTeamCompare','renderRecords','renderFactGenerator','buildContentPack']
   }
 };
