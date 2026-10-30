@@ -117,6 +117,8 @@ test('historical records are built one season at a time', () => {
   'Builder should process a single season per loop iteration');
  assert.ok(!builder.includes('Promise.all(YEARS.map'),
   'Builder must not retain all historical CSV rows concurrently');
+ assert.equal((builder.match(/const weeklyGroups=/g)||[]).length,1,
+  'Weekly player statistics should be calculated once and shared across phases');
  assert.ok(html.includes('replace per-player/per-metric Sets'),
   'Career coverage metadata should stay compact');
 });
