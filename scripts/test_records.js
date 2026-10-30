@@ -107,6 +107,19 @@ test('Records index retains the correct top 50 in descending order', () => {
   assert.ok(Number(list[i-1].value)>=Number(list[i].value),'Ranking order should be descending');
  }
 });
+
+test('historical records are built one season at a time', () => {
+ const start=html.indexOf('async function buildRecordsIndex()');
+ const end=html.indexOf('function setupRecordsControls()',start);
+ assert.ok(start>=0&&end>start,'Records index builder should exist');
+ const builder=html.slice(start,end);
+ assert.ok(builder.includes('for(let yearIndex=0;yearIndex<YEARS.length;yearIndex++)'),
+  'Builder should process a single season per loop iteration');
+ assert.ok(!builder.includes('Promise.all(YEARS.map'),
+  'Builder must not retain all historical CSV rows concurrently');
+ assert.ok(html.includes('replace per-player/per-metric Sets'),
+  'Career coverage metadata should stay compact');
+});
 test('untracked drop data is not converted to a zero-percent record', () => {
  assert.equal(sandbox.metricValue(row({targets:'20'}),'receiving_drop_pct'),null);
  assert.equal(sandbox.recordAggregateValue([row({targets:'20'})],'receiving_drop_pct','season'),null);
