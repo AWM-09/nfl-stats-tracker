@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const root = process.cwd();
 const dataDir = path.join(root, 'data');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'tracker.html'), 'utf8');
 const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
   .find(item => item[1].includes('function recordAggregateValue') &&
                 item[1].includes('function metricValue'));
