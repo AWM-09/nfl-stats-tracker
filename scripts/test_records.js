@@ -119,6 +119,6 @@ test('missing historical air-yard rows do not dilute aDOT', () => {
  sandbox.addCareerSeason(bucket,[rows[0]],2009);
  sandbox.addCareerSeason(bucket,[rows[1]],2025);
  near(sandbox.careerRecordValue(bucket,'average_depth_of_target'),7,'Career aDOT with partial source coverage');
- assert.deepEqual([...bucket.metricYears.average_depth_of_target],[2025]);
+ assert.deepEqual(bucket.metricYears.average_depth_of_target,{first:2025,last:2025,count:1});
 });
 console.log('Record calculation tests passed.');
