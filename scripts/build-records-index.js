@@ -92,7 +92,7 @@ vm.runInNewContext(source, sandbox, { timeout: 20000 });
     loaded: result.loaded,
     loaded_years: result.loadedYears || [],
     skipped: result.skipped || [],
-    metrics: ['passing_yards','passing_tds','passing_interceptions','completion_pct','passer_rating','pass_yards_per_attempt','passing_epa','passing_cpoe','rushing_yards','carries','rushing_tds','rushing_yards_per_carry','receiving_yards','receptions','targets','receiving_tds','catch_rate','average_depth_of_target','receiving_epa','def_sacks','def_interceptions','def_tackles_solo','def_tackles_with_assist','def_tackles_for_loss','def_qb_hits','def_forced_fumbles','def_fumble_recoveries','def_tds','fg_made','fg_attempts','fg_pct','fg_long','punting_avg','kick_return_yards','kick_return_avg','punt_return_yards'],
+    metrics: ['passing_yards','passing_tds','passing_interceptions','completion_pct','passer_rating','pass_yards_per_attempt','passing_epa','passing_cpoe','passing_success_rate','average_time_to_throw','sacks_suffered','rushing_yards','carries','rushing_tds','rushing_yards_per_carry','rushing_success_rate','receiving_yards','receptions','targets','receiving_tds','catch_rate','average_depth_of_target','receiving_epa','def_sacks','def_interceptions','def_tackles_solo','def_tackles_with_assist','def_tackles_for_loss','def_qb_hits','def_forced_fumbles','def_fumble_recoveries','def_tds','fg_made','fg_attempts','fg_pct','fg_long','punting_avg','kick_return_yards','kick_return_avg','punt_return_yards'],
     players: result.players || []
   };
   const playerPath = path.join(dataDir, 'player-index.json');
