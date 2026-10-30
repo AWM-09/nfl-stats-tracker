@@ -12,7 +12,7 @@ const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
                 item[1].includes('function metricValue'));
 
 if (!match) {
-  throw new Error('Could not extract the Records calculation code from index.html.');
+  throw new Error('Could not extract the Records calculation code from tracker.html.');
 }
 
 // Reuse the dashboard's tested calculations so the fast index and the browser
