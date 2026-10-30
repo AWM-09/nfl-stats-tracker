@@ -423,14 +423,10 @@ jobs:
           )
           if replaced != 1:
               raise SystemExit("Could not version the dashboard build/cache key.")
-          old_tab = '<button class="tab" data-view="calendar">NFL Calendar</button>'
-          new_tab = '<a class="tab" href="./calendar.html">NFL Calendar &amp; Predictor ↗</a>'
-          if old_tab in html:
-              html = html.replace(old_tab, new_tab, 1)
-              path.write_text(html, encoding="utf-8")
-              print("Linked main tracker to the new calendar and predictor.")
-          else:
-              print("Calendar tab text was not found; leaving index.html unchanged.")
+          if 'href="./calendar.html"' not in html:
+              raise SystemExit("The main tracker is missing its Calendar link.")
+          path.write_text(html, encoding="utf-8")
+          print("Verified the main tracker Calendar link and refreshed its build cache key.")
           PY
 
       - name: Build published data health manifest
