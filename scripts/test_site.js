@@ -45,6 +45,53 @@ assert.ok(player.includes("searchParams.set('player'"), 'Player profiles must ha
 const health = fs.readFileSync(path.join(site, 'health.html'), 'utf8');
 assert.ok(health.includes('./data/site-manifest.json'), 'Health Centre must load the published data manifest.');
 
+// Static interaction contracts catch accidentally removed controls or core
+// functions on the tools that are not covered by the formula-specific suites.
+const toolContracts = {
+  'advanced.html': {
+    ids: ['overview','players','teams','situational','games','records','scenarios','content','playerPick','runScenario','fourthCalc'],
+    functions: ['renderPlayerCompare','renderTeamCompare','renderRecords','renderScenario','fourthDown','makeContent']
+  },
+  'calendar.html': {
+    ids: ['liveGames','calendarPanel','predictorPanel','gameList','detailPanel','plays'],
+    functions: ['renderCalendar','openGame','loadPbpForGame','runPrediction','renderFullStandings']
+  },
+  'accuracy.html': {
+    ids: ['modelSummary','accuracy','brier','misses','rerun'],
+    functions: ['backtest','load']
+  },
+  'news.html': {
+    ids: ['panel-news','panel-transactions','panel-injuries','panel-scores','panel-standings'],
+    functions: ['loadNews','loadTransactions','loadInjuries','loadScores','loadStandings']
+  },
+  'playbook.html': {
+    ids: ['builder','book','learn','savePlay','bookList'],
+    functions: ['drawPlay','savePlay','renderBook','startSurvivor']
+  },
+  'rulebook.html': {
+    ids: ['search','category','directory','details','prev','next'],
+    functions: ['renderDirectory','renderDetail']
+  },
+  'research.html': {
+    ids: ['panel-games','panel-streaks','panel-quality','panel-franchise','panel-seasons','panel-search','panel-content','panel-downloads'],
+    functions: ['runGame','runStreak','runQuality','runFranchise','runSeason','runSearch','renderPack']
+  },
+  'tracker.html': {
+    ids: ['viewTabs','recordsPanel','playercompare','teamcompare','factPanel','contentStudioPanel'],
+    functions: ['loadData','renderPlayerCompare','renderTeamCompare','renderRecords','renderFactGenerator','buildContentPack']
+  }
+};
+for (const [page, contract] of Object.entries(toolContracts)) {
+  const html = fs.readFileSync(path.join(site, page), 'utf8');
+  for (const id of contract.ids) {
+    assert.ok(html.includes('id="' + id + '"'), page + ' is missing required control/panel: ' + id);
+  }
+  for (const fn of contract.functions) {
+    assert.ok(html.includes('function ' + fn + '(') || html.includes('async function ' + fn + '('),
+      page + ' is missing required interaction function: ' + fn);
+  }
+}
+
 const manifestPath = path.join(site, 'data', 'site-manifest.json');
 assert.ok(fs.existsSync(manifestPath), 'Published data manifest is missing.');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
