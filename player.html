@@ -144,7 +144,9 @@ async function loadGameLog(){
 }
 async function init(){
  try{
-  const response=await fetch('./data/player-index.json',{cache:'force-cache'});
+  let buildVersion='player-v1';
+  try{const buildResponse=await fetch('./build-info.json',{cache:'no-store'});if(buildResponse.ok){const build=await buildResponse.json();buildVersion=build.workflow_run_id||build.commit||buildVersion;}}catch{}
+  const response=await fetch('./data/player-index.json?build='+encodeURIComponent(buildVersion),{cache:'force-cache'});
   if(!response.ok)throw new Error('Player directory unavailable (HTTP '+response.status+').');
   playerIndex=await response.json();
   if(playerIndex.version!==1||!Array.isArray(playerIndex.players))throw new Error('Player directory has an unsupported format.');
