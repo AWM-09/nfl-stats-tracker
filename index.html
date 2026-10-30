@@ -890,8 +890,8 @@ function aggregateRecordColumns(rows){
  }));
  return totals;
 }
-function recordAggregateValue(rows,stat,mode){
- rows=rowsWithRecordMetricData(rows,stat);
+function recordAggregateValue(rows,stat,mode,rowsAlreadyFiltered=false){
+ if(!rowsAlreadyFiltered)rows=rowsWithRecordMetricData(rows,stat);
  if(!rows.length||!metrics[stat])return null;
  const meta=metrics[stat];
  if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
@@ -926,19 +926,28 @@ function recordPhaseLabel(phase){
  if(phase==='POST')return 'Playoffs';
  return 'Regular season + playoffs';
 }
+function compareRecordEntries(a,b){
+ return Number(b.value)-Number(a.value)||String(a.player).localeCompare(String(b.player))||(b.year||0)-(a.year||0);
+}
 function addTopRecord(index,mode,phase,stat,entry){
  if(entry.value===null||entry.value===undefined||!Number.isFinite(Number(entry.value)))return;
  const meta=metrics[stat];
  if(Number(entry.value)===0&&meta&&(meta.sum||meta.max||meta.fumblesRecovered||(meta.derived&&!RECORD_RATIO_STATS.has(stat))))return;
  const list=index[mode][phase][stat];
- if(list.length>=100&&Number(entry.value)<Number(list[list.length-1].value))return;
- list.push(entry);
- list.sort((a,b)=>Number(b.value)-Number(a.value)||String(a.player).localeCompare(String(b.player))||(b.year||0)-(a.year||0));
- if(list.length>100)list.length=100;
+ // Keep the highest 100 with binary insertion instead of repeatedly sorting.
+ if(list.length>=50&&compareRecordEntries(list[list.length-1],entry)<=0)return;
+ let low=0,high=list.length;
+ while(low<high){
+  const mid=(low+high)>>1;
+  if(compareRecordEntries(list[mid],entry)<=0)low=mid+1;
+  else high=mid;
+ }
+ list.splice(low,0,entry);
+ if(list.length>50)list.pop();
 }
 function createRecordEntry(rows,year,mode,stat,phase){
  const metricRows=rowsWithRecordMetricData(rows,stat);
- const value=recordAggregateValue(metricRows,stat,mode);
+ const value=recordAggregateValue(metricRows,stat,mode,true);
  if(value===null)return null;
  const player=rows[0].player||'Unknown player';
  const teams=[...new Set(metricRows.map(row=>teamName(row.team)).filter(team=>team&&team!=='—'))];
@@ -953,26 +962,20 @@ function createRecordEntry(rows,year,mode,stat,phase){
  return {player:player,team:teams.join(', ')||'—',value:Number(value),scope:scope,year:year,week:mode==='weekly'?Number(rows[0].week):null,weeks:weekKeys.length,seasons:1};
 }
 function newCareerBucket(rows){
- return {player:rows[0].player||'Unknown player',rawTotals:{},ratioTotals:{},sums:{},sumCounts:{},weightedAverageSums:{},weightedAverageWeights:{},averageSums:{},averageCounts:{},maxValues:{},metricYears:{},metricWeeks:{},seasons:new Set(),weeks:new Set(),teams:new Set()};
+ return {player:rows[0].player||'Unknown player',ratioTotals:{},sums:{},sumCounts:{},weightedAverageSums:{},weightedAverageWeights:{},maxValues:{},metricYears:{},metricWeeks:{},teams:new Set()};
 }
 function addCareerSeason(bucket,rows,year){
  if(!rows.length)return;
  bucket.player=rows[rows.length-1].player||bucket.player;
- bucket.seasons.add(year);
- rows.forEach(row=>{
-  bucket.weeks.add(String(year)+'|'+String(row.week)+'|'+String(row.season_type));
-  if(row.team)bucket.teams.add(teamName(row.team));
- });
- const rawYear=aggregateRecordColumns(rows);
- Object.entries(rawYear).forEach(([key,value])=>{
-  if(typeof value==='number'&&Number.isFinite(value))bucket.rawTotals[key]=(bucket.rawTotals[key]||0)+value;
-  else if(bucket.rawTotals[key]===undefined)bucket.rawTotals[key]=value;
- });
+ rows.forEach(row=>{if(row.team)bucket.teams.add(teamName(row.team))});
  function markCoverage(stat,validRows){
-  if(!bucket.metricYears[stat])bucket.metricYears[stat]=new Set();
-  if(!bucket.metricWeeks[stat])bucket.metricWeeks[stat]=new Set();
-  bucket.metricYears[stat].add(year);
-  validRows.forEach(row=>bucket.metricWeeks[stat].add(String(year)+'|'+String(row.week)+'|'+String(row.season_type)));
+  // Each player is processed once per season and phase, so compact counters
+  // replace per-player/per-metric Sets that consumed large amounts of heap.
+  const coverage=bucket.metricYears[stat]||(bucket.metricYears[stat]={first:year,last:year,count:0});
+  coverage.last=year;
+  coverage.count++;
+  const uniqueWeeks=new Set(validRows.map(row=>String(row.week)+'|'+String(row.season_type)));
+  bucket.metricWeeks[stat]=(bucket.metricWeeks[stat]||0)+uniqueWeeks.size;
  }
  Object.entries(metrics).forEach(([stat,meta])=>{
   const aggregateMetric=meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat));
@@ -1031,26 +1034,35 @@ async function buildRecordsIndex(){
  const careers={ALL:new Map(),REG:new Map(),POST:new Map()};
  const stats=Object.keys(metrics),phases=['ALL','REG','POST'];
  const skipped=[],loaded=[];
- $('recordsStatus').textContent='Loading '+YEARS.length+' seasons in parallel…';
- // Fetch files concurrently; the old implementation waited for each season in sequence.
- const fetched=await Promise.all(YEARS.map(async year=>{
+ const yieldToHost=()=>new Promise(resolve=>{
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>resolve());
+  else if(typeof setImmediate==='function')setImmediate(resolve);
+  else setTimeout(resolve,0);
+ });
+ $('recordsStatus').textContent='Loading historical seasons one at a time…';
+
+ // Keep just one season's raw rows in memory. Retaining all 27 CSVs caused the
+ // Node build runner to exhaust its heap while creating the precomputed index.
+ for(let yearIndex=0;yearIndex<YEARS.length;yearIndex++){
+  const year=YEARS[yearIndex];
+  let rows=null;
   try{
    const response=await fetch('./data/stats_player_week_'+year+'.csv',{cache:'force-cache'});
    if(!response.ok)throw new Error('HTTP '+response.status);
-   const csv=await response.text();
+   let csv=await response.text();
    if(!csv.trim()||csv.trimStart().startsWith('<'))throw new Error('Missing or invalid CSV');
-   const rows=parseCSV(csv).map(normalize).filter(row=>row.season===year&&row.week>=1&&row.week<=22&&row.player);
+   rows=parseCSV(csv).map(normalize).filter(row=>row.season===year&&row.week>=1&&row.week<=22&&row.player);
+   csv=null;
    if(!rows.length)throw new Error('No valid player-week rows');
-   return {year,rows};
-  }catch(error){return {year,error:String(error)}}
- }));
- const available=fetched.filter(item=>item.rows);
- skipped.push(...fetched.filter(item=>!item.rows).map(item=>item.year));
- if(!available.length)throw new Error('No historical player-week seasons could be loaded.');
- for(let yearIndex=0;yearIndex<available.length;yearIndex++){
-  const {year,rows}=available[yearIndex];
+  }catch(error){
+   skipped.push(year);
+   rows=null;
+   await yieldToHost();
+   continue;
+  }
+
   loaded.push(year);
-  $('recordsStatus').textContent='Calculating records: '+year+' ('+(yearIndex+1)+' of '+available.length+' available seasons)…';
+  $('recordsStatus').textContent='Calculating records: '+year+' ('+loaded.length+' of '+YEARS.length+' seasons processed)…';
   for(const phase of phases){
    const phaseRows=phase==='ALL'?rows:rows.filter(row=>phaseMatches(row,phase));
    if(!phaseRows.length)continue;
@@ -1074,20 +1086,23 @@ async function buildRecordsIndex(){
     }
    }
   }
-  // Yield only between seasons so the browser can update progress without adding a fixed delay per request.
-  await new Promise(resolve=>requestAnimationFrame(resolve));
+
+  // Let the season rows be collected before the next CSV is parsed.
+  rows=null;
+  await yieldToHost();
  }
+ if(!loaded.length)throw new Error('No historical player-week seasons could be loaded.');
  for(const phase of phases){
   for(const bucket of careers[phase].values()){
    for(const stat of stats){
-    const seasons=[...(bucket.metricYears[stat]||new Set())].sort((a,b)=>a-b);
-    if(!seasons.length)continue;
+    const coverage=bucket.metricYears[stat];
+    if(!coverage||!coverage.count)continue;
     const value=careerRecordValue(bucket,stat);
     if(value===null||value===undefined||!Number.isFinite(Number(value)))continue;
     addTopRecord(index,'career',phase,stat,{
      player:bucket.player,team:[...bucket.teams].filter(Boolean).join(', ')||'—',value:Number(value),
-     scope:'Career · '+seasons[0]+'–'+seasons[seasons.length-1]+' ('+seasons.length+' seasons with data)',
-     year:seasons[seasons.length-1],week:null,weeks:(bucket.metricWeeks[stat]||new Set()).size,seasons:seasons.length
+     scope:'Career · '+coverage.first+'–'+coverage.last+' ('+coverage.count+' seasons with data)',
+     year:coverage.last,week:null,weeks:bucket.metricWeeks[stat]||0,seasons:coverage.count
     });
    }
   }

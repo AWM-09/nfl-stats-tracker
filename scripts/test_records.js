@@ -91,6 +91,35 @@ test('zero placeholders are excluded from most-volume records', () => {
  assert.equal(index.season.REG.passing_yards.length,1);
  assert.equal(index.season.REG.passing_yards[0].player,'Passer');
 });
+
+test('Records index retains the correct top 50 in descending order', () => {
+ const index=sandbox.createRecordsIndex();
+ for(let value=1;value<=100;value++){
+  sandbox.addTopRecord(index,'season','REG','passing_yards',{
+   value,player:'Player '+String(value).padStart(3,'0'),year:2025
+  });
+ }
+ const list=index.season.REG.passing_yards;
+ assert.equal(list.length,50,'Index should retain only the visible maximum of 50 records');
+ assert.equal(Number(list[0].value),100,'Highest value should rank first');
+ assert.equal(Number(list[49].value),51,'Fiftieth value should be correct');
+ for(let i=1;i<list.length;i++){
+  assert.ok(Number(list[i-1].value)>=Number(list[i].value),'Ranking order should be descending');
+ }
+});
+
+test('historical records are built one season at a time', () => {
+ const start=html.indexOf('async function buildRecordsIndex()');
+ const end=html.indexOf('function setupRecordsControls()',start);
+ assert.ok(start>=0&&end>start,'Records index builder should exist');
+ const builder=html.slice(start,end);
+ assert.ok(builder.includes('for(let yearIndex=0;yearIndex<YEARS.length;yearIndex++)'),
+  'Builder should process a single season per loop iteration');
+ assert.ok(!builder.includes('Promise.all(YEARS.map'),
+  'Builder must not retain all historical CSV rows concurrently');
+ assert.ok(html.includes('replace per-player/per-metric Sets'),
+  'Career coverage metadata should stay compact');
+});
 test('untracked drop data is not converted to a zero-percent record', () => {
  assert.equal(sandbox.metricValue(row({targets:'20'}),'receiving_drop_pct'),null);
  assert.equal(sandbox.recordAggregateValue([row({targets:'20'})],'receiving_drop_pct','season'),null);
@@ -103,6 +132,6 @@ test('missing historical air-yard rows do not dilute aDOT', () => {
  sandbox.addCareerSeason(bucket,[rows[0]],2009);
  sandbox.addCareerSeason(bucket,[rows[1]],2025);
  near(sandbox.careerRecordValue(bucket,'average_depth_of_target'),7,'Career aDOT with partial source coverage');
- assert.deepEqual([...bucket.metricYears.average_depth_of_target],[2025]);
+ assert.deepEqual(bucket.metricYears.average_depth_of_target,{first:2025,last:2025,count:1});
 });
 console.log('Record calculation tests passed.');
