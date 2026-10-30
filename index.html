@@ -1078,12 +1078,19 @@ async function buildRecordsIndex(){
      if(entry)addTopRecord(index,'season',phase,stat,entry);
     }
    }
-   const weeklyGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player)+'|'+row.week+'|'+(phase==='ALL'?row.season_type:phase));
-   for(const weeklyRows of weeklyGroups.values()){
-    for(const stat of stats){
-     const entry=createRecordEntry(weeklyRows,year,'weekly',stat,phase);
-     if(entry)addTopRecord(index,'weekly',phase,stat,entry);
-    }
+  }
+
+  // A player/week group belongs to both ALL and its specific phase. Compute
+  // weekly metric values once, then insert the same result into both indexes;
+  // the old loop recalculated every weekly metric three times (ALL, REG, POST).
+  const weeklyGroups=groupRecordRows(rows,row=>normalisePlayerName(row.player)+'|'+row.week+'|'+row.season_type);
+  for(const weeklyRows of weeklyGroups.values()){
+   const phase=phaseMatches(weeklyRows[0],'POST')?'POST':'REG';
+   for(const stat of stats){
+    const entry=createRecordEntry(weeklyRows,year,'weekly',stat,'ALL');
+    if(!entry)continue;
+    addTopRecord(index,'weekly','ALL',stat,entry);
+    addTopRecord(index,'weekly',phase,stat,entry);
    }
   }
 
