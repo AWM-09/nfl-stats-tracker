@@ -90,7 +90,7 @@ function showProfile(profile){
  const firstSeason=seasons[0]?.season,lastSeason=seasons[seasons.length-1]?.season;
  $('playerMeta').innerHTML=[positions.join(' / '),allTeams.join(' · '),seasons.length+' seasons',firstSeason+'–'+lastSeason].filter(Boolean).map(x=>'<span class="chip">'+clean(x)+'</span>').join('');
  const totals=[['Passing yards','passing_yards'],['Passing TDs','passing_tds'],['Rushing yards','rushing_yards'],['Receiving yards','receiving_yards']];
- $('careerKpis').innerHTML=totals.map(([label,key])=>{const total=seasons.reduce((sum,s)=>sum+Number(s.stats?.[key]||0),0);return '<div class="card"><div class="label">'+clean(label)+'</div><div class="value">'+fmt(total)+'</div><div class="note">Career total · tracked seasons</div></div>';}).join('');
+ $('careerKpis').innerHTML=totals.map(([label,key])=>{const values=seasons.map(s=>s.stats?.[key]).filter(v=>v!==undefined&&v!==null&&Number.isFinite(Number(v)));const total=values.length?values.reduce((sum,v)=>sum+Number(v),0):null;return '<div class="card"><div class="label">'+clean(label)+'</div><div class="value">'+fmt(total)+'</div><div class="note">'+values.length+' seasons with tracked data</div></div>';}).join('');
  $('seasonSelect').innerHTML=seasons.slice().reverse().map(s=>'<option value="'+s.season+'">'+s.season+'</option>').join('');
  renderProgression();renderSelectedSeason();
  const url=new URL(location.href);url.searchParams.set('player',profile.name);url.searchParams.delete('id');history.replaceState({},'',url);
