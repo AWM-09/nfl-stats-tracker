@@ -16,7 +16,7 @@ const sandbox = vm.createContext({
  window: {},
  localStorage: { getItem() { return null; }, setItem() {} }
 });
-vm.runInNewContext(source + '\nglobalThis.__recordMetricKeys = Object.keys(metrics);', sandbox, { timeout: 10000 });
+vm.runInNewContext(source + '\nglobalThis.__recordMetricKeys = Object.keys(metrics);\nglobalThis.__profileMetricKeys = PROFILE_METRICS;\nglobalThis.__addPlayerProfileSeason = addPlayerProfileSeason;', sandbox, { timeout: 10000 });
 function row(values) {
  return Object.assign({ player:'Audit Player',team:'NE',position:'QB',season:2025,week:1,season_type:'REG' }, values);
 }
@@ -28,6 +28,26 @@ function test(name, fn) { fn(); console.log('PASS '+name); }
 
 test('metric catalogue remains complete', () => {
  assert.ok(sandbox.__recordMetricKeys.length >= 70, 'Metric inventory unexpectedly shrank.');
+});
+
+test('player profile summaries combine weekly stats accurately', () => {
+ const profiles=new Map();
+ const rows=[
+  row({player_id:'P-MAHOMES',player:'Profile Audit QB',position:'QB',game_id:'G1',week:1,attempts:'10',completions:'7',passing_yards:'100',passing_tds:'1',passing_interceptions:'0',rushing_yards:'12',carries:'2'}),
+  row({player_id:'P-MAHOMES',player:'Profile Audit QB',position:'QB',game_id:'G2',week:2,attempts:'20',completions:'13',passing_yards:'170',passing_tds:'2',passing_interceptions:'1',rushing_yards:'8',carries:'1'})
+ ];
+ sandbox.__addPlayerProfileSeason(profiles,'profile audit qb',rows,2025);
+ const profile=profiles.get('profile audit qb');
+ assert.ok(profile,'Player should be indexed');
+ assert.equal(profile.id,'P-MAHOMES');
+ assert.equal(profile.seasons.length,1);
+ assert.equal(profile.seasons[0].games,2);
+ assert.equal(profile.seasons[0].stats.passing_yards,270);
+ assert.equal(profile.seasons[0].stats.passing_tds,3);
+ assert.equal(profile.seasons[0].stats.passing_interceptions,1);
+ assert.equal(profile.seasons[0].stats.completion_pct,66.667);
+ assert.equal(profile.seasons[0].stats.rushing_yards,20);
+ assert.ok(sandbox.__profileMetricKeys.length>=30,'Profile metric catalogue should include the key statistical categories');
 });
 test('season passing yards sum weekly totals', () => {
  near(sandbox.recordAggregateValue([row({passing_yards:'400'}),row({week:2,passing_yards:'300'})],'passing_yards','season'),700,'Passing yards');
