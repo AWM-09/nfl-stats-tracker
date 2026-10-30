@@ -436,9 +436,6 @@ jobs:
       - name: Build published data health manifest
         run: node scripts/build_site_manifest.js
 
-      - name: Run published site integration checks
-        run: node scripts/test_site.js
-
       - name: Generate build metadata
         env:
           BUILD_COMMIT: ${{ github.sha }}
@@ -464,6 +461,9 @@ jobs:
           Path("site/build-info.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
           print("Wrote build metadata for commit", info["commit"])
           PY
+
+      - name: Run published site integration checks
+        run: node scripts/test_site.js
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
