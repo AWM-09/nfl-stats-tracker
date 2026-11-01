@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-CAP_LIMITS={2009:128.0,2011:120.375,2012:120.6,2013:123.0,2014:133.0,2015:143.28,2016:155.27,2017:167.0,2018:177.2,2019:188.2,2020:198.2,2021:182.5,2022:208.2,2023:224.8,2024:255.4,2025:279.2,2026:301.2}
+CAP_LIMITS={1994:34.6,1995:37.1,1996:40.8,1997:41.5,1998:52.4,1999:57.3,2000:63.2,2001:67.4,2002:71.1,2003:75.0,2004:80.6,2005:85.5,2006:102.0,2007:109.0,2008:116.0,2009:128.0,2011:120.375,2012:120.6,2013:123.0,2014:133.0,2015:143.28,2016:155.27,2017:167.0,2018:177.2,2019:188.2,2020:198.2,2021:182.5,2022:208.2,2023:224.8,2024:255.4,2025:279.2,2026:301.2}
 STATUS_LABELS={"ACT":"Active roster","DEV":"Practice squad","PUP":"Physically unable to perform","RES":"Reserve list","INA":"Inactive","IR":"Injured reserve","SUS":"Suspended","RET":"Retired","CUT":"Released","UFA":"Unrestricted free agent","EXE":"Commissioner exempt"}
 def norm(value):
     text=unicodedata.normalize("NFKD",str(value or ""))
@@ -115,7 +115,7 @@ def build_platform(data_dir="data",year=2026):
           "known_guaranteed_millions":round(sum(guarantees),3) if guarantees else None,"cap_space_millions":None,
           "note":"Annual contract value is not a current-year cap charge. The source does not provide every cap adjustment, dead-money charge, restructure or carryover, so team cap space is not calculated."}}
     payload={"version":1,"season":year,"generated_at":datetime.now(timezone.utc).isoformat(),"roster_week":latest_week,
-     "teams":result,"coverage":{"roster_rows":len(roster_rows),"latest_roster_rows":len(latest),"contracts_rows":len(contract_rows),
+     "teams":result,"league_cap_history_millions":CAP_LIMITS,"coverage":{"roster_rows":len(roster_rows),"latest_roster_rows":len(latest),"contracts_rows":len(contract_rows),
       "injury_rows":len(injury_rows),"depth_chart_rows":len(depth_rows),"teams_with_rosters":len(result)},
      "sources":{"roster":"nflverse weekly rosters","contracts":"OverTheCap historical contracts via nflverse",
       "injuries":"nflverse injury reports where available","depth_chart":"nflverse depth charts","team_metadata":"nflverse team metadata"}}
