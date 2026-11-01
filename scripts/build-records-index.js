@@ -92,7 +92,8 @@ vm.runInNewContext(source, sandbox, { timeout: 20000 });
     loaded: result.loaded,
     loaded_years: result.loadedYears || [],
     skipped: result.skipped || [],
-    metrics: Object.keys(sandbox.__playerMetricDefinitions || {}),\n    metric_labels: Object.fromEntries(Object.entries(sandbox.__playerMetricDefinitions || {}).map(([key, meta]) => [key, meta.label || key])),
+    metrics: Object.keys(sandbox.__playerMetricDefinitions || {}),
+    metric_labels: Object.fromEntries(Object.entries(sandbox.__playerMetricDefinitions || {}).map(([key, meta]) => [key, meta.label || key])),
     players: result.players || []
   };
   const playerPath = path.join(dataDir, 'player-index.json');
