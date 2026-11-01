@@ -936,27 +936,43 @@ function aggregateRecordColumns(rows){
  }));
  return totals;
 }
-function recordAggregateValue(rows,stat,mode,rowsAlreadyFiltered=false){
- if(!rowsAlreadyFiltered)rows=rowsWithRecordMetricData(rows,stat);
- if(!rows.length||!metrics[stat])return null;
- const meta=metrics[stat];
- if(meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat))){
-  const result=metricValue(aggregateRecordColumns(rows),stat);
-  return result===null||result===undefined||!Number.isFinite(Number(result))?null:Number(result);
- }
- if(meta.average){
-  if(mode==='weekly'&&rows.length===1){
-   const value=metricValue(rows[0],stat);
-   if(value===null||value===undefined||!Number.isFinite(Number(value)))return null;
-   if(recordAverageWeight(rows[0],stat)!==null||stat==='def_pressure_rate')return Number(value);
-   return null;
+function recordAggregateDetails(rows,stat,mode,rowsAlreadyFiltered=false){
+ if(!rows.length||!metrics[stat])return {rows:[],value:null};
+ const meta=metrics[stat],ratio=meta.rate||meta.rating||(meta.derived&&RECORD_RATIO_STATS.has(stat));
+ if(ratio){
+  let validRows=rows;
+  if(!rowsAlreadyFiltered){
+   const required=RECORD_RATIO_REQUIRED_FIELDS[stat];
+   validRows=required?rows.filter(row=>recordFieldsComplete(row,required)):rows.filter(row=>{
+    const value=metricValue(row,stat);return value!==null&&value!==undefined&&Number.isFinite(Number(value));
+   });
   }
-  return weightedRecordAverage(rows,stat);
+  if(!validRows.length)return {rows:[],value:null};
+  const value=metricValue(aggregateRecordColumns(validRows),stat);
+  return {rows:validRows,value:value===null||value===undefined||!Number.isFinite(Number(value))?null:Number(value)};
  }
- const values=rows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
- if(!values.length)return null;
- if(meta.max)return Math.max(...values);
- return values.reduce((sum,value)=>sum+value,0);
+ const validRows=[];let total=0,maximum=-Infinity,weightedTotal=0,totalWeight=0;
+ for(const row of rows){
+  const value=metricValue(row,stat);
+  if(value===null||value===undefined||!Number.isFinite(Number(value)))continue;
+  const numeric=Number(value);
+  if(meta.average){
+   const weight=recordAverageWeight(row,stat);
+   if(weight===null){
+    if(mode==='weekly'&&rows.length===1&&stat==='def_pressure_rate'){validRows.push(row);return {rows:validRows,value:numeric};}
+    continue;
+   }
+   weightedTotal+=numeric*weight;totalWeight+=weight;validRows.push(row);
+  }else{
+   total+=numeric;maximum=Math.max(maximum,numeric);validRows.push(row);
+  }
+ }
+ if(!validRows.length)return {rows:[],value:null};
+ if(meta.average)return {rows:validRows,value:totalWeight?weightedTotal/totalWeight:null};
+ return {rows:validRows,value:meta.max?maximum:total};
+}
+function recordAggregateValue(rows,stat,mode,rowsAlreadyFiltered=false){
+ return recordAggregateDetails(rows,stat,mode,rowsAlreadyFiltered).value;
 }
 function recordPlayerKey(row){const id=first(row,['player_id','gsis_id']);return id?'id:'+String(id).trim():'name:'+normalisePlayerName(row.player)}
 function groupRecordRows(rows,keyFunction){
@@ -993,8 +1009,8 @@ function addTopRecord(index,mode,phase,stat,entry){
  if(list.length>50)list.pop();
 }
 function createRecordEntry(rows,year,mode,stat,phase){
- const metricRows=rowsWithRecordMetricData(rows,stat);
- const value=recordAggregateValue(metricRows,stat,mode,true);
+ const details=recordAggregateDetails(rows,stat,mode);
+ const metricRows=details.rows,value=details.value;
  if(value===null)return null;
  const player=rows[0].player||'Unknown player';
  const teams=[...new Set(metricRows.map(row=>teamName(row.team)).filter(team=>team&&team!=='—'))];
@@ -1050,17 +1066,19 @@ function addCareerSeason(bucket,rows,year){
    if(validRows.length)markCoverage(stat,validRows);
    return;
   }
-  const validRows=rowsWithRecordMetricData(rows,stat);
-  if(!validRows.length)return;
-  const values=validRows.map(row=>metricValue(row,stat)).filter(value=>value!==null&&value!==undefined&&Number.isFinite(Number(value))).map(Number);
-  if(!values.length)return;
+  const validRows=[];let total=0,maximum=-Infinity,count=0;
+  for(const row of rows){
+   const value=metricValue(row,stat);
+   if(value===null||value===undefined||!Number.isFinite(Number(value)))continue;
+   const numeric=Number(value);validRows.push(row);total+=numeric;maximum=Math.max(maximum,numeric);count++;
+  }
+  if(!count)return;
   markCoverage(stat,validRows);
   if(meta.max){
-   const maximum=Math.max(...values);
    bucket.maxValues[stat]=bucket.maxValues[stat]===undefined?maximum:Math.max(bucket.maxValues[stat],maximum);
   }else{
-   bucket.sums[stat]=(bucket.sums[stat]||0)+values.reduce((sum,value)=>sum+value,0);
-   bucket.sumCounts[stat]=(bucket.sumCounts[stat]||0)+values.length;
+   bucket.sums[stat]=(bucket.sums[stat]||0)+total;
+   bucket.sumCounts[stat]=(bucket.sumCounts[stat]||0)+count;
   }
  });
 }
