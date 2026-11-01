@@ -108,18 +108,24 @@ async function loadHistoricalTrend(){const team=selectedTeam,metric=METRICS.find
 let teamPlatformData=null,teamScheduleRows=null,dossierTab='roster';
 const FRANCHISE_TIMELINES={
  ARI:'Chicago Cardinals (1920–1959) → St. Louis Cardinals (1960–1987) → Phoenix Cardinals (1988–1993) → Arizona Cardinals (1994–present)',
+ ATL:'Atlanta Falcons (1966–present)',BAL:'Baltimore Ravens (1996–present)',BUF:'Buffalo Bills (1960–present)',
+ CAR:'Carolina Panthers (1995–present)',CHI:'Decatur Staleys (1919–1920) → Chicago Staleys (1921) → Chicago Bears (1922–present)',
+ CIN:'Cincinnati Bengals (1968–present)',CLE:'Cleveland Browns (1946–1995; returned 1999–present)',
+ DAL:'Dallas Cowboys (1960–present)',DEN:'Denver Broncos (1960–present)',DET:'Portsmouth Spartans (1930–1933) → Detroit Lions (1934–present)',
+ GB:'Green Bay Packers (1919–present)',HOU:'Houston Texans (2002–present)',
+ IND:'Baltimore Colts (1953–1983) → Indianapolis Colts (1984–present)',JAX:'Jacksonville Jaguars (1995–present)',
+ KC:'Dallas Texans (1960–1962) → Kansas City Chiefs (1963–present)',LAC:'San Diego Chargers (1961–2016) → Los Angeles Chargers (2017–present)',
  LA:'Cleveland Rams (1937–1945) → Los Angeles Rams (1946–1994) → St. Louis Rams (1995–2015) → Los Angeles Rams (2016–present)',
  LAR:'Cleveland Rams (1937–1945) → Los Angeles Rams (1946–1994) → St. Louis Rams (1995–2015) → Los Angeles Rams (2016–present)',
- LAC:'San Diego Chargers (1961–2016) → Los Angeles Chargers (2017–present)',
  LV:'Oakland Raiders (1960–1981) → Los Angeles Raiders (1982–1994) → Oakland Raiders (1995–2019) → Las Vegas Raiders (2020–present)',
+ MIA:'Miami Dolphins (1966–present)',MIN:'Minnesota Vikings (1961–present)',
+ NE:'Boston Patriots (1960–1970) → New England Patriots (1971–present)',NO:'New Orleans Saints (1967–present)',
+ NYG:'New York Giants (1925–present)',NYJ:'New York Titans (1960–1962) → New York Jets (1963–present)',
+ PHI:'Philadelphia Eagles (1933–present)',PIT:'Pittsburgh Steelers (1933–present)',SF:'San Francisco 49ers (1946–present)',
+ SEA:'Seattle Seahawks (1976–present)',TB:'Tampa Bay Buccaneers (1976–present)',
  TEN:'Houston Oilers (1960–1996) → Tennessee Oilers (1997–1998) → Tennessee Titans (1999–present)',
- IND:'Baltimore Colts (1953–1983) → Indianapolis Colts (1984–present)',
  WSH:'Boston Redskins (1932–1936) → Washington Redskins (1937–2019) → Washington Football Team (2020–2021) → Washington Commanders (2022–present)',
- WAS:'Boston Redskins (1932–1936) → Washington Redskins (1937–2019) → Washington Football Team (2020–2021) → Washington Commanders (2022–present)',
- NYJ:'New York Titans (1960–1962) → New York Jets (1963–present)',
- KC:'Dallas Texans (1960–1962) → Kansas City Chiefs (1963–present)',
- HOU:'Houston Texans (2002–present)',CAR:'Carolina Panthers (1995–present)',JAX:'Jacksonville Jaguars (1995–present)',
- TB:'Tampa Bay Buccaneers (1976–present)',SEA:'Seattle Seahawks (1976–present)'
+ WAS:'Boston Redskins (1932–1936) → Washington Redskins (1937–2019) → Washington Football Team (2020–2021) → Washington Commanders (2022–present)'
 };
 function moneyMillions(v){return v===null||v===undefined||!Number.isFinite(Number(v))?'—':'$'+Number(v).toLocaleString(undefined,{maximumFractionDigits:2})+'m'}
 function dossierTeamCodes(code){return FRANCHISE_CODES[code]||[code]}
