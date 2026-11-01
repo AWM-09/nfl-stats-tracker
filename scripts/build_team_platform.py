@@ -16,7 +16,7 @@ CURRENT_TEAMS={
 "MIN":"Minnesota Vikings","NE":"New England Patriots","NO":"New Orleans Saints","NYG":"New York Giants",
 "NYJ":"New York Jets","PHI":"Philadelphia Eagles","PIT":"Pittsburgh Steelers","SEA":"Seattle Seahawks",
 "SF":"San Francisco 49ers","TB":"Tampa Bay Buccaneers","TEN":"Tennessee Titans","WAS":"Washington Commanders"}
-TEAM_ALIASES={"JAC":"JAX","LA":"LAR","STL":"LAR","OAK":"LV","SD":"LAC","SDG":"LAC","WSH":"WAS"}
+TEAM_ALIASES={"JAC":"JAX","HST":"HOU","LA":"LAR","STL":"LAR","OAK":"LV","SD":"LAC","SDG":"LAC","WSH":"WAS","WFT":"WAS","CLV":"CLE","ARZ":"ARI"}
 def canonical_team(value):
     code=str(value or "").strip().upper()
     return TEAM_ALIASES.get(code,code)
@@ -38,6 +38,15 @@ def millions(value):
     n=number(value)
     return round(n/1_000_000,3) if n is not None else None
 def truth(value): return str(value or "").strip().lower() in ("true","1","yes","y")
+def norm_id(value):
+    return re.sub(r"[^a-z0-9]", "", str(value or "").strip().lower())
+def active_contract_for_season(row, season):
+    flag=first(row,["is_active","active","currently_active"]).strip().lower()
+    if flag in ("false","0","no","n","inactive"): return False
+    signed=number(first(row,["year_signed","signing_year"]))
+    years=number(first(row,["years","contract_years","length"]))
+    if signed is None or years is None or not (1990<=signed<=season and 1<=years<=15): return False
+    return int(signed+years-1)>=season
 def read_rows(path):
     path=Path(path)
     if not path.exists(): return []
@@ -53,14 +62,28 @@ def build_platform(data_dir="data",year=2026):
     team_rows=read_rows(root/"teams_colors_logos.csv")
     weeks=[number(first(r,["week","week_num"])) for r in roster_rows]
     latest_week=max((int(x) for x in weeks if x is not None),default=0)
-    latest=[r for r in roster_rows if (number(first(r,["week","week_num"])) or 0)==latest_week]
+    # Select the newest available snapshot independently for each franchise.
+    # A league-wide max week can silently drop a team whose feed is a week behind.
+    weekly_by_team=defaultdict(list)
+    for row in roster_rows:
+        team=canonical_team(first(row,["team","team_abbr","recent_team"]))
+        week_value=number(first(row,["week","week_num"]))
+        name=first(row,["full_name","player_name","player_display_name","name"])
+        if team in CURRENT_TEAMS and week_value is not None and name:
+            weekly_by_team[team].append((int(week_value),row))
+    team_roster_weeks={team:max((week for week,_ in entries),default=0)
+                       for team,entries in weekly_by_team.items()}
+    latest=[]
+    for team,entries in weekly_by_team.items():
+        team_week=team_roster_weeks[team]
+        latest.extend(row for week,row in entries if week==team_week)
     contracts=defaultdict(list)
     contracts_by_id=defaultdict(list)
     for row in contract_rows:
         name=first(row,["player","player_name","full_name"])
         if name: contracts[norm(name)].append(row)
         player_id=first(row,["gsis_id","player_id"])
-        if player_id: contracts_by_id[player_id].append(row)
+        if player_id: contracts_by_id[norm_id(player_id)].append(row)
     injuries=defaultdict(list)
     for row in injury_rows:
         name=first(row,["full_name","player_name","player"]);team=canonical_team(first(row,["team","team_abbr"]))
@@ -83,13 +106,25 @@ def build_platform(data_dir="data",year=2026):
         name=first(row,["full_name","player_name","player_display_name","name"])
         if not team or not name: continue
         roster_id=first(row,["gsis_id","player_id"])
-        choices=contracts_by_id.get(roster_id,[]) if roster_id else contracts.get(norm(name),[])
-        active=[c for c in choices if truth(c.get("is_active"))]
-        # Never fall back to an expired historical deal. If IDs are unavailable,
-        # only use a name match when it identifies one active contract unambiguously.
-        contract=active[0] if len(active)==1 else None
-        if len(active)>1 and roster_id:
-            contract=sorted(active,key=lambda c:(number(c.get("year_signed")) or 0,number(c.get("years")) or 0),reverse=True)[0]
+        id_choices=contracts_by_id.get(norm_id(roster_id),[]) if roster_id else []
+        name_choices=contracts.get(norm(name),[])
+        # Prefer the player ID, but use a normalized-name fallback when source IDs
+        # are absent/inconsistent. Only retain deals active in this season/team.
+        active_id=[c for c in id_choices if active_contract_for_season(c,year)]
+        active_name=[c for c in name_choices if active_contract_for_season(c,year)]
+        candidates=active_id or active_name
+        team_candidates=[c for c in candidates
+                         if canonical_team(first(c,["team","team_abbr","team_code"]))==team]
+        if not team_candidates and active_name:
+            team_candidates=[c for c in active_name
+                             if canonical_team(first(c,["team","team_abbr","team_code"]))==team]
+        if not team_candidates:
+            unassigned=[c for c in candidates if not first(c,["team","team_abbr","team_code"])]
+            if len(unassigned)==1: team_candidates=unassigned
+        contract=max(team_candidates,key=lambda c:(
+            number(first(c,["year_signed","signing_year"])) or 0,
+            number(first(c,["years","contract_years","length"])) or 0
+        )) if team_candidates else None
         signed=number(contract.get("year_signed")) if contract else None
         years=number(contract.get("years")) if contract else None
         valid_dates=(signed is not None and years is not None and 1990<=signed<=year and 1<=years<=15)
@@ -131,6 +166,7 @@ def build_platform(data_dir="data",year=2026):
         guarantees=[c["guaranteed"] for c in found if c.get("guaranteed") is not None]
         reports=[p for p in players if p["injury"] and (p["injury"]["report_status"] or p["injury"]["practice_status"])]
         result[team]={"team":{"abbr":team,**metadata.get(team,{"name":team})},"roster":players,
+         "roster_week":team_roster_weeks.get(team,0),
          "injuries":[{"name":p["name"],"position":p["position"],**p["injury"]} for p in reports],
          "salary_cap":{"league_limit_millions":CAP_LIMITS.get(year),"known_roster_contracts":len(found),
           "known_annual_value_millions":round(sum(apys),3) if apys else None,
@@ -138,7 +174,9 @@ def build_platform(data_dir="data",year=2026):
           "note":"Annual contract value is not a current-year cap charge. The source does not provide every cap adjustment, dead-money charge, restructure or carryover, so team cap space is not calculated."}}
     payload={"version":1,"season":year,"generated_at":datetime.now(timezone.utc).isoformat(),"roster_week":latest_week,
      "teams":result,"league_cap_history_millions":CAP_LIMITS,"coverage":{"roster_rows":len(roster_rows),"latest_roster_rows":len(latest),"contracts_rows":len(contract_rows),
-      "injury_rows":len(injury_rows),"depth_chart_rows":len(depth_rows),"franchises":len(result),"teams_with_rosters":sum(bool(v["roster"]) for v in result.values()),"teams_missing_rosters":[k for k,v in result.items() if not v["roster"]]},
+      "injury_rows":len(injury_rows),"depth_chart_rows":len(depth_rows),"franchises":len(result),"teams_with_rosters":sum(bool(v["roster"]) for v in result.values()),"teams_missing_rosters":[k for k,v in result.items() if not v["roster"]],
+      "teams_below_20_players":[k for k,v in result.items() if len(v["roster"])<20],
+      "team_roster_weeks":team_roster_weeks},
      "sources":{"roster":"nflverse weekly rosters","contracts":"OverTheCap historical contracts via nflverse",
       "injuries":"nflverse injury reports where available","depth_chart":"nflverse depth charts","team_metadata":"nflverse team metadata"}}
     root.mkdir(parents=True,exist_ok=True)
