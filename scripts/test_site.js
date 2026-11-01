@@ -47,7 +47,11 @@ assert.ok(health.includes('./data/site-manifest.json'), 'Health Centre must load
 
 // Static interaction contracts catch accidentally removed controls or core
 // functions on the tools that are not covered by the formula-specific suites.
-const toolContracts = {\n  'teams.html': {\n    ids: ['season','phase','team','metric','rankBody','compare','profileBody','trendChart','teamGrid'],\n    functions: ['loadSeason','loadHistoricalTrend','render','metricValue']\n  },
+const toolContracts = {
+  'teams.html': {
+    ids: ['season','phase','team','metric','rankBody','compare','profileBody','trendChart','teamGrid'],
+    functions: ['loadSeason','loadHistoricalTrend','render','metricValue']
+  },
   'advanced.html': {
     ids: ['overview','players','teams','situational','games','records','scenarios','content','playerPick','runScenario','fourthCalc'],
     functions: ['renderPlayer','renderCareer','renderTeams','renderSituational','renderGames','renderRecords','renderScenario','fourthDown','makeContent']
