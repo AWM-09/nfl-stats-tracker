@@ -661,18 +661,15 @@ async function renderPlayerCompare(){
  $('comparisonMessage').textContent=!stats.length?'Select one or more statistics above.':es.some(e=>e.player&&!e.weeks.length)?'Select at least one week for each player.':es.some(e=>e.player&&!e.values[stats[0]]?.value&&e.values[stats[0]]?.value!==0)?'Some player-season combinations have no matching data. Check the selected seasons and spelling of the player name.':`Comparing ${new Set(es.filter(e=>e.player).map(e=>e.i)).size} player(s) across ${es.length} selected player-season column(s) and ${stats.length} statistic(s). Each selected season is shown separately.`;
 }
 function teamCompareValue(team,k,year,weeks,phase){
- const rr=raw.filter(r=>r.season===+year&&weeks.includes(+r.week)&&phaseMatches(r,phase)&&r.team===team);
+ const rr=teamCompareRaw.filter(r=>r.season===+year&&weeks.includes(+r.week)&&phaseMatches(r,phase)&&r.team===team);
  if(!rr.length)return {value:null,games:0,weeksFound:[]};
- const vals=rr.map(r=>metricValue(r,k)).filter(v=>v!==null&&v!==undefined&&Number.isFinite(Number(v)));
- let value;
- if(metrics[k].rate){
-  // Completion percentage is calculated from combined completions and attempts.
-  const a=rr.reduce((s,r)=>s+num(r.attempts),0),c=rr.reduce((s,r)=>s+num(r.completions),0);
-  value=a?100*c/a:null;
- }else if(metrics[k].rating)value=passerRatingForRows(rr);
- else value=vals.length?vals.reduce((a,b)=>a+b,0):null;
- return {value,games:new Set(rr.map(r=>`${r.week}|${r.player}`)).size,weeksFound:[...new Set(rr.map(r=>+r.week))].sort((a,b)=>a-b)};
+ // Use the same weighted/derived aggregation engine as Records, rather than
+ // summing per-game averages or percentages as if they were counting stats.
+ const value=recordAggregateValue(rr,k,'season');
+ const gameKeys=new Set(rr.map(r=>String(r.game_id||r.week+'|'+r.season_type)));
+ return {value,games:gameKeys.size,weeksFound:[...new Set(rr.map(r=>+r.week))].sort((a,b)=>a-b)};
 }
+let teamCompareRaw=[],teamCompareCache=new Map();
 let selectedTeamCompareTeams=[];
 let selectedTeamCompareStats=['passing_yards','passing_tds','rushing_yards','receiving_yards'];
 function renderSelectedTeamChips(){
@@ -688,21 +685,52 @@ function setupStatAdders(){
  $('addPlayerStatBtn').onclick=()=>{const k=$('playerStatSelect').value;if(k&&!selectedPlayerCompareStats.includes(k)){selectedPlayerCompareStats.push(k);renderPlayerStatChips();renderPlayerCompare()}};
  $('addTeamStatBtn').onclick=()=>{const k=$('teamStatSelect').value;if(k&&!selectedTeamCompareStats.includes(k)){selectedTeamCompareStats.push(k);renderStatChips('teamStatChips',selectedTeamCompareStats,removeTeamStat);renderTeamCompare()}};
 }
+async function loadTeamCompareSeason(){
+ const year=+$('teamCompareYear').value;
+ $('teamCompareMessage').textContent='Loading '+year+' team comparison data…';
+ $('addTeamCompareBtn').disabled=true;
+ try{
+  if(!teamCompareCache.has(year)){
+   const response=await fetch('./data/stats_player_week_'+year+'.csv',{cache:'force-cache'});
+   if(!response.ok)throw new Error('HTTP '+response.status);
+   const csv=await response.text();
+   if(csv.trimStart().startsWith('<'))throw new Error('The response was HTML, not a player CSV.');
+   const rows=parseCSV(csv).map(normalize).filter(r=>r.season===year&&r.week>=1&&r.week<=22&&r.player);
+   if(!rows.length)throw new Error('No player-week rows are available for '+year+'.');
+   teamCompareCache.set(year,rows);
+  }
+  teamCompareRaw=teamCompareCache.get(year);
+  const teams=[...new Set(teamCompareRaw.map(r=>r.team).filter(Boolean))].sort((a,b)=>teamName(a).localeCompare(teamName(b)));
+  $('teamCompareTeamSelect').innerHTML='<option value="">Choose a team…</option>'+teams.map(code=>'<option value="'+esc(code)+'">'+esc(teamName(code))+'</option>').join('');
+  selectedTeamCompareTeams=selectedTeamCompareTeams.filter(code=>teams.includes(code));
+  renderSelectedTeamChips();
+  refreshTeamWeeks();
+  $('teamCompareMessage').textContent='Loaded '+teamCompareRaw.length.toLocaleString()+' player-week rows for '+year+'. Select teams and statistics to compare.';
+  renderTeamCompare();
+ }catch(error){
+  teamCompareRaw=[];
+  $('teamCompareWeeks').innerHTML='';
+  $('teamCompareTeamSelect').innerHTML='<option value="">No teams available</option>';
+  $('teamCompareMessage').textContent='Could not load '+year+' comparison data: '+error.message;
+  renderTeamCompare();
+ }finally{$('addTeamCompareBtn').disabled=false}
+}
 function setupTeamCompare(){
- 
  populateSeasonDropdown('teamCompareYear',+$('year').value||2026);
- const teams=[...new Set(raw.map(r=>r.team).filter(Boolean))].sort((a,b)=>teamName(a).localeCompare(teamName(b)));
- $('teamCompareTeamSelect').innerHTML='<option value="">Choose a team…</option>'+teams.map(t=>`<option value="${esc(t)}">${esc(teamName(t))}</option>`).join('');
+ $('teamCompareTeamSelect').innerHTML='<option value="">Loading teams…</option>';
  selectedTeamCompareTeams=[];renderSelectedTeamChips();
- $('addTeamCompareBtn').onclick=()=>{const t=$('teamCompareTeamSelect').value;if(!t){$('teamCompareMessage').textContent='Choose a team first.';return}if(selectedTeamCompareTeams.includes(t)){$('teamCompareMessage').textContent=`${teamName(t)} has already been added.`;return}selectedTeamCompareTeams.push(t);renderSelectedTeamChips();renderTeamCompare()};
- const ws=[...new Set(raw.filter(r=>r.season===+$('teamCompareYear').value).map(r=>r.week))].sort((a,b)=>a-b);
- $('teamCompareWeeks').innerHTML=ws.map(w=>`<label><input type="checkbox" data-team-week value="${w}" checked>W${w}</label>`).join('');
- ['teamCompareYear','teamComparePhase'].forEach(id=>$(id).addEventListener('change',()=>{if(id==='teamCompareYear')refreshTeamWeeks();renderTeamCompare()}));
+ $('addTeamCompareBtn').onclick=()=>{const team=$('teamCompareTeamSelect').value;if(!team){$('teamCompareMessage').textContent='Choose a team first.';return}if(selectedTeamCompareTeams.includes(team)){$('teamCompareMessage').textContent=teamName(team)+' has already been added.';return}selectedTeamCompareTeams.push(team);renderSelectedTeamChips();renderTeamCompare()};
+ $('teamCompareYear').addEventListener('change',loadTeamCompareSeason);
+ $('teamComparePhase').addEventListener('change',renderTeamCompare);
  $('teamCompareWeeks').addEventListener('change',renderTeamCompare);
  $('teamWeeksAll').onclick=()=>{$('teamCompareWeeks').querySelectorAll('input').forEach(e=>e.checked=true);renderTeamCompare()};
  $('teamWeeksClear').onclick=()=>{$('teamCompareWeeks').querySelectorAll('input').forEach(e=>e.checked=false);renderTeamCompare()};
+ loadTeamCompareSeason();
 }
-function refreshTeamWeeks(){const ws=[...new Set(raw.filter(r=>r.season===+$('teamCompareYear').value).map(r=>r.week))].sort((a,b)=>a-b);$('teamCompareWeeks').innerHTML=ws.map(w=>`<label><input type="checkbox" data-team-week value="${w}" checked>W${w}</label>`).join('')}
+function refreshTeamWeeks(){
+ const weeks=[...new Set(teamCompareRaw.filter(r=>phaseMatches(r,$('teamComparePhase').value)).map(r=>r.week))].sort((a,b)=>a-b);
+ $('teamCompareWeeks').innerHTML=weeks.map(week=>'<label><input type="checkbox" data-team-week value="'+week+'" checked>W'+week+'</label>').join('');
+}
 function renderTeamCompare(){
  if(!$('teamStatSelect')){const chartEl=$('teamCompareChart');if(chartEl)chartEl.innerHTML='<div class="muted">Statistics controls have not loaded. Refresh the page.</div>';return;}
  const stats=[...selectedTeamCompareStats],year=+$('teamCompareYear').value,phase=$('teamComparePhase').value;
@@ -930,6 +958,7 @@ function recordAggregateValue(rows,stat,mode,rowsAlreadyFiltered=false){
  if(meta.max)return Math.max(...values);
  return values.reduce((sum,value)=>sum+value,0);
 }
+function recordPlayerKey(row){const id=first(row,['player_id','gsis_id']);return id?'id:'+String(id).trim():'name:'+normalisePlayerName(row.player)}
 function groupRecordRows(rows,keyFunction){
  const groups=new Map();
  rows.forEach(row=>{
@@ -1106,7 +1135,7 @@ async function buildRecordsIndex(){
   for(const phase of phases){
    const phaseRows=phase==='ALL'?rows:rows.filter(row=>phaseMatches(row,phase));
    if(!phaseRows.length)continue;
-   const playerGroups=groupRecordRows(phaseRows,row=>normalisePlayerName(row.player));
+   const playerGroups=groupRecordRows(phaseRows,row=>recordPlayerKey(row));
    const careerMap=careers[phase];
    for(const [playerKey,playerRows] of playerGroups){
     if(!playerKey)continue;
@@ -1124,7 +1153,7 @@ async function buildRecordsIndex(){
   // A player/week group belongs to both ALL and its specific phase. Compute
   // weekly metric values once, then insert the same result into both indexes;
   // the old loop recalculated every weekly metric three times (ALL, REG, POST).
-  const weeklyGroups=groupRecordRows(rows,row=>normalisePlayerName(row.player)+'|'+row.week+'|'+row.season_type);
+  const weeklyGroups=groupRecordRows(rows,row=>recordPlayerKey(row)+'|'+row.week+'|'+row.season_type);
   for(const weeklyRows of weeklyGroups.values()){
    const phase=phaseMatches(weeklyRows[0],'POST')?'POST':'REG';
    for(const stat of stats){

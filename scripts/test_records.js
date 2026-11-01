@@ -16,7 +16,7 @@ const sandbox = vm.createContext({
  window: {},
  localStorage: { getItem() { return null; }, setItem() {} }
 });
-vm.runInNewContext(source + '\nglobalThis.__recordMetricKeys = Object.keys(metrics);\nglobalThis.__profileMetricKeys = PROFILE_METRICS;\nglobalThis.__addPlayerProfileSeason = addPlayerProfileSeason;', sandbox, { timeout: 10000 });
+vm.runInNewContext(source + '\nglobalThis.__recordMetricKeys = Object.keys(metrics);\nglobalThis.__profileMetricKeys = PROFILE_METRICS;\nglobalThis.__addPlayerProfileSeason = addPlayerProfileSeason;\nglobalThis.__recordPlayerKey = recordPlayerKey;', sandbox, { timeout: 10000 });
 function row(values) {
  return Object.assign({ player:'Audit Player',team:'NE',position:'QB',season:2025,week:1,season_type:'REG' }, values);
 }
@@ -30,7 +30,7 @@ test('metric catalogue remains complete', () => {
  assert.ok(sandbox.__recordMetricKeys.length >= 70, 'Metric inventory unexpectedly shrank.');
 });
 
-test('player profile summaries combine weekly stats accurately', () => {
+test('player identities with matching names remain distinct when source IDs differ', () => {\n const a=sandbox.__recordPlayerKey(row({player_id:'PLAYER-A',player:'Chris Smith'}));\n const b=sandbox.__recordPlayerKey(row({player_id:'PLAYER-B',player:'Chris Smith'}));\n assert.notEqual(a,b);\n assert.equal(sandbox.__recordPlayerKey(row({player:'Fallback Player'})),'name:fallbackplayer');\n});\n\ntest('player profile summaries combine weekly stats accurately', () => {
  const profiles=new Map();
  const rows=[
   row({player_id:'P-MAHOMES',player:'Profile Audit QB',position:'QB',game_id:'G1',week:1,attempts:'10',completions:'7',passing_yards:'100',passing_tds:'1',passing_interceptions:'0',rushing_yards:'12',carries:'2'}),
