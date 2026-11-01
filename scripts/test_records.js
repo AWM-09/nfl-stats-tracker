@@ -8,7 +8,9 @@ const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
  .find(item => item[1].includes('function recordAggregateValue') && item[1].includes('function metricValue'));
 assert.ok(match, 'Could not extract main dashboard script.');
 const original = match[1];
-const source = original.replace(/\ninit\(\);\s*$/, '\n');
+const source = original.replace(/
+init\(\);\s*$/, '
+');
 assert.notEqual(source, original, 'Could not remove browser startup call for isolated tests.');
 const sandbox = vm.createContext({
  console: { info() {}, log() {}, warn() {}, error() {} },
@@ -16,7 +18,10 @@ const sandbox = vm.createContext({
  window: {},
  localStorage: { getItem() { return null; }, setItem() {} }
 });
-vm.runInNewContext(source + '\nglobalThis.__recordMetricKeys = Object.keys(metrics);\nglobalThis.__profileMetricKeys = PROFILE_METRICS;\nglobalThis.__addPlayerProfileSeason = addPlayerProfileSeason;', sandbox, { timeout: 10000 });
+vm.runInNewContext(source + '
+globalThis.__recordMetricKeys = Object.keys(metrics);
+globalThis.__profileMetricKeys = PROFILE_METRICS;
+globalThis.__addPlayerProfileSeason = addPlayerProfileSeason;', sandbox, { timeout: 10000 });
 function row(values) {
  return Object.assign({ player:'Audit Player',team:'NE',position:'QB',season:2025,week:1,season_type:'REG' }, values);
 }
@@ -47,7 +52,8 @@ test('player profile summaries combine weekly stats accurately', () => {
  assert.equal(profile.seasons[0].stats.passing_interceptions,1);
  assert.equal(profile.seasons[0].stats.completion_pct,66.667);
  assert.equal(profile.seasons[0].stats.rushing_yards,20);
- assert.equal(sandbox.__profileMetricKeys.length,sandbox.__recordMetricKeys.length,'Player Profiles must expose every metric in the shared analytics catalogue.');\n assert.deepEqual(Array.from(sandbox.__profileMetricKeys).sort(),Array.from(sandbox.__recordMetricKeys).sort(),'Player profile and analytics metric catalogues must match exactly.');
+ assert.equal(sandbox.__profileMetricKeys.length,sandbox.__recordMetricKeys.length,'Player Profiles must expose every metric in the shared analytics catalogue.');
+ assert.deepEqual(Array.from(sandbox.__profileMetricKeys).sort(),Array.from(sandbox.__recordMetricKeys).sort(),'Player profile and analytics metric catalogues must match exactly.');
 });
 test('season passing yards sum weekly totals', () => {
  near(sandbox.recordAggregateValue([row({passing_yards:'400'}),row({week:2,passing_yards:'300'})],'passing_yards','season'),700,'Passing yards');
