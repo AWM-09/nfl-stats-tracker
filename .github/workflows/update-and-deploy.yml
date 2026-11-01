@@ -2,8 +2,16 @@ name: Update NFL stats and deploy dashboard
 
 on:
   workflow_dispatch:
+    inputs:
+      rebuild_indexes:
+        description: 'Rebuild full historical Records and Player Profiles indexes (slow)'
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: '0 7 * * *'
+      timezone: 'Europe/London'
+    - cron: '0 8 * * 4'
       timezone: 'Europe/London'
   push:
     branches: [main]
@@ -96,6 +104,9 @@ jobs:
 
       - name: Test NFL Research Lab calculations
         run: node scripts/test_research.js
+
+      - name: Test franchise dossier data builder
+        run: python3 -m unittest discover -s scripts -p 'test_team_platform.py'
 
       - name: Download weekly player stats for 2000–2026 (regular season and playoffs)
         shell: bash
@@ -325,7 +336,29 @@ jobs:
           print(f"Total matched rows: {total_matched}")
           PY
 
+      - name: Re-use last validated historical indexes
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.rebuild_indexes) && !(github.event_name == 'schedule' && github.event.schedule == '0 8 * * 4') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://awm-09.github.io/nfl-stats-tracker/data"
+          for file in records-index.json player-index.json; do
+            curl --silent --show-error --fail --location --retry 2 "${base}/${file}" --output "data/${file}.cached" || {
+              echo "::notice::No published ${file} cache is available; a full index build will run."
+              exit 0
+            }
+            mv "data/${file}.cached" "data/${file}"
+          done
+          if node scripts/validate_cached_indexes.js; then
+            echo "INDEX_REUSED=true" >> "$GITHUB_ENV"
+            echo "Reused compatible historical indexes. Full rebuilds run on Thursday or when manually requested."
+          else
+            rm -f data/records-index.json data/player-index.json
+            echo "::notice::Published indexes are stale or incompatible; a full index build will run."
+          fi
+
       - name: Precompute Records index for fast browser loading
+        if: env.INDEX_REUSED != 'true'
         run: node --expose-gc scripts/build-records-index.js
 
       - name: Download NFL schedule and scores
@@ -351,6 +384,28 @@ jobs:
           echo "NFL schedule downloaded successfully."
           echo "Schedule rows: $(($(wc -l < data/schedule.csv) - 1))"
 
+
+      - name: Download franchise rosters, contracts, injuries and depth charts
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://github.com/nflverse/nflverse-data/releases/download"
+          curl --silent --show-error --fail --location --retry 3 "${base}/weekly_rosters/roster_weekly_2026.csv" --output data/roster_weekly_2026.csv
+          curl --silent --show-error --fail --location --retry 3 "${base}/contracts/historical_contracts.csv.gz" --output data/historical_contracts.csv.gz
+          curl --silent --show-error --fail --location --retry 3 "${base}/teams/teams_colors_logos.csv" --output data/teams_colors_logos.csv
+          if curl --silent --show-error --fail --location --retry 2 "${base}/depth_charts/depth_charts_2026.csv" --output data/depth_charts_2026.csv; then
+            echo "Current depth charts downloaded."
+          else
+            echo "::warning::Depth chart feed unavailable; roster will still publish."
+            rm -f data/depth_charts_2026.csv
+          fi
+          if curl --silent --show-error --fail --location --retry 2 "${base}/injuries/injuries_2026.csv" --output data/injuries_2026.csv; then
+            echo "Current injury reports downloaded."
+          else
+            echo "::warning::Current injury feed unavailable; no injury details will be fabricated."
+            rm -f data/injuries_2026.csv
+          fi
+          python3 scripts/build_team_platform.py
 
       - name: Download NFL play-by-play data
         shell: bash
@@ -408,6 +463,8 @@ jobs:
           test -s site/data/player-index.json
           cp data/stats_team_week_*.csv site/data/
           cp data/schedule.csv site/data/schedule.csv
+          cp data/team-platform.json site/data/team-platform.json
+          test -s site/data/team-platform.json
           for year in 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026; do
             gzip -c "data/play_by_play_${year}.csv" > "site/data/play_by_play_${year}.csv.gz"
             test -s "site/data/play_by_play_${year}.csv.gz"

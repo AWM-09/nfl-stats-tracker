@@ -28,6 +28,16 @@ for (const page of expectedPages) {
   }
 }
 
+const teamPage = fs.readFileSync(path.join(site, 'teams.html'), 'utf8');
+for (const id of ['franchiseDossier','teamIdentity','dossierKpis','dossierTabs','dossierContent']) {
+  assert.ok(teamPage.includes('id="'+id+'"'), 'Team Platform is missing ' + id);
+}
+const teamDataPath = path.join(site, 'data', 'team-platform.json');
+assert.ok(fs.existsSync(teamDataPath), 'Published team-platform.json is missing.');
+const teamData = JSON.parse(fs.readFileSync(teamDataPath, 'utf8'));
+assert.equal(teamData.version, 1, 'Team Platform data version is invalid.');
+assert.ok(Object.keys(teamData.teams || {}).length >= 30, 'Team Platform must contain at least 30 teams.');
+
 const home = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
 for (const target of ['tracker.html','player.html','teams.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html']) {
   assert.ok(home.includes('./' + target), 'Homepage is missing a link to ' + target);

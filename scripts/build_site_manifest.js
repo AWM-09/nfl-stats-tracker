@@ -99,6 +99,13 @@ const playersOk = !!players && players.version === 1 && playerCount > 0 && playe
 datasets.push({ name: 'Searchable player profiles', seasons: players ? String(players.loaded_years?.length || 0) + '/27' : '—', files: playersOk ? 1 : 0, expected_files: 1, bytes: players ? fs.statSync(path.join(data, 'player-index.json')).size : 0, status: playersOk ? 'passed' : 'failed' });
 addCheck('Searchable player profiles', playersOk, playersOk ? playerCount.toLocaleString('en-US') + ' players and ' + playerSeasons.toLocaleString('en-US') + ' player-seasons indexed.' : 'Player index is invalid, empty or missing seasons.');
 
+const teamPlatform = readJson('team-platform.json');
+const teamPlatformOk = !!teamPlatform && teamPlatform.version === 1 &&
+  Object.keys(teamPlatform.teams || {}).length >= 30 &&
+  Array.isArray(teamPlatform.teams.NE?.roster);
+datasets.push({ name: 'Franchise roster and contract dossier', seasons: teamPlatform ? String(teamPlatform.season || '—') : '—', files: teamPlatformOk ? 1 : 0, expected_files: 1, bytes: teamPlatform ? fs.statSync(path.join(data, 'team-platform.json')).size : 0, status: teamPlatformOk ? 'passed' : 'failed' });
+addCheck('Franchise roster and contract dossier', teamPlatformOk, teamPlatformOk ? Object.keys(teamPlatform.teams).length + ' team dossiers loaded.' : 'Team dossier is missing, invalid or has incomplete franchise coverage.');
+
 const allPassed = checks.every(check => check.status === 'passed') && missing.length === 0;
 const manifest = {
   version: 1,
