@@ -55,9 +55,12 @@ def build_platform(data_dir="data",year=2026):
     latest_week=max((int(x) for x in weeks if x is not None),default=0)
     latest=[r for r in roster_rows if (number(first(r,["week","week_num"])) or 0)==latest_week]
     contracts=defaultdict(list)
+    contracts_by_id=defaultdict(list)
     for row in contract_rows:
         name=first(row,["player","player_name","full_name"])
         if name: contracts[norm(name)].append(row)
+        player_id=first(row,["gsis_id","player_id"])
+        if player_id: contracts_by_id[player_id].append(row)
     injuries=defaultdict(list)
     for row in injury_rows:
         name=first(row,["full_name","player_name","player"]);team=canonical_team(first(row,["team","team_abbr"]))
@@ -79,17 +82,22 @@ def build_platform(data_dir="data",year=2026):
         team=canonical_team(first(row,["team","team_abbr","recent_team"]))
         name=first(row,["full_name","player_name","player_display_name","name"])
         if not team or not name: continue
-        choices=contracts.get(norm(name),[])
-        same=[c for c in choices if first(c,["team","team_abbr"]).upper()==team]
-        pool=same or choices
-        active=[c for c in pool if truth(c.get("is_active"))]
-        pool=active or pool
-        pool.sort(key=lambda c:(number(c.get("year_signed")) or 0,number(c.get("years")) or 0),reverse=True)
-        contract=pool[0] if pool else None
+        roster_id=first(row,["gsis_id","player_id"])
+        choices=contracts_by_id.get(roster_id,[]) if roster_id else contracts.get(norm(name),[])
+        active=[c for c in choices if truth(c.get("is_active"))]
+        # Never fall back to an expired historical deal. If IDs are unavailable,
+        # only use a name match when it identifies one active contract unambiguously.
+        contract=active[0] if len(active)==1 else None
+        if len(active)>1 and roster_id:
+            contract=sorted(active,key=lambda c:(number(c.get("year_signed")) or 0,number(c.get("years")) or 0),reverse=True)[0]
         signed=number(contract.get("year_signed")) if contract else None
         years=number(contract.get("years")) if contract else None
-        end_year=signed+years-1 if signed is not None and years is not None else None
+        valid_dates=(signed is not None and years is not None and 1990<=signed<=year and 1<=years<=15)
+        end_year=int(signed+years-1) if valid_dates else None
         left=max(0,int(end_year-year+1)) if end_year is not None else None
+        if end_year is not None and end_year<year:
+            contract=None
+            signed=years=end_year=left=None
         inj=sorted(injuries.get((team,norm(name)),[]),key=lambda x:first(x,["date_modified","report_date"]),reverse=True)
         depth=sorted(depths.get((team,norm(name)),[]),key=lambda x:(first(x,["dt","date_modified"]),-(number(x.get("pos_rank")) or 999)),reverse=True)
         injury=inj[0] if inj else None
