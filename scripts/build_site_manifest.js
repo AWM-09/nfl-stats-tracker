@@ -100,12 +100,42 @@ datasets.push({ name: 'Searchable player profiles', seasons: players ? String(pl
 addCheck('Searchable player profiles', playersOk, playersOk ? playerCount.toLocaleString('en-US') + ' players and ' + playerSeasons.toLocaleString('en-US') + ' player-seasons indexed.' : 'Player index is invalid, empty or missing seasons.');
 
 const teamPlatform = readJson('team-platform.json');
+const franchiseCodes = Object.keys(teamPlatform?.teams || {});
+const teamsWithRoster = franchiseCodes.filter(code => Array.isArray(teamPlatform.teams[code]?.roster) && teamPlatform.teams[code].roster.length >= 20);
+const teamsUnderfilled = franchiseCodes.filter(code => !Array.isArray(teamPlatform.teams[code]?.roster) || teamPlatform.teams[code].roster.length < 20);
 const teamPlatformOk = !!teamPlatform && teamPlatform.version === 1 &&
-  Object.keys(teamPlatform.teams || {}).length === 32 &&
-  Object.values(teamPlatform.teams || {}).every(team => Array.isArray(team.roster)) &&
-  Array.isArray(teamPlatform.teams.NE?.roster);
-datasets.push({ name: 'Franchise roster and contract dossier', seasons: teamPlatform ? String(teamPlatform.season || '—') : '—', files: teamPlatformOk ? 1 : 0, expected_files: 1, bytes: teamPlatform ? fs.statSync(path.join(data, 'team-platform.json')).size : 0, status: teamPlatformOk ? 'passed' : 'failed' });
-addCheck('Franchise roster and contract dossier', teamPlatformOk, teamPlatformOk ? Object.keys(teamPlatform.teams).length + ' team dossiers loaded.' : 'Team dossier must contain all 32 current franchises with a roster array for each (empty is allowed when the source feed has no roster).');
+  franchiseCodes.length === 32 && teamsWithRoster.length === 32 &&
+  Object.values(teamPlatform.teams).every(team => Array.isArray(team.roster)) &&
+  franchiseCodes.every(code => Number(teamPlatform.teams[code].roster_week) > 0);
+datasets.push({
+  name: 'Franchise roster and contract dossier',
+  seasons: teamPlatform ? String(teamPlatform.season || '—') : '—',
+  files: teamPlatformOk ? 1 : 0, expected_files: 1,
+  bytes: teamPlatform ? fs.statSync(path.join(data, 'team-platform.json')).size : 0,
+  status: teamPlatformOk ? 'passed' : 'failed',
+  franchises_populated: teamsWithRoster.length,
+  franchises_underfilled: teamsUnderfilled
+});
+addCheck('Franchise roster and contract dossier', teamPlatformOk,
+  teamPlatformOk
+    ? 'All 32 franchises have at least 20 roster entries and a team-specific weekly snapshot.'
+    : teamsWithRoster.length + '/32 franchises have at least 20 roster entries. Underfilled/missing: ' + (teamsUnderfilled.join(', ') || 'team snapshot week missing') + '. Deployment blocked to avoid publishing empty or incomplete team pages.');
+
+const officialRecords = readJson('official-records.json');
+const officialRecordsOk = !!officialRecords && officialRecords.version === 1 &&
+  typeof officialRecords.source_url === 'string' &&
+  Array.isArray(officialRecords.records) && officialRecords.records.length >= 10 &&
+  officialRecords.records.every(record => record.category && record.record_type && record.holder && Number.isFinite(Number(record.value)));
+datasets.push({
+  name: 'Independently verified official records',
+  seasons: officialRecords?.statistics_current_through || '—',
+  files: officialRecordsOk ? 1 : 0, expected_files: 1,
+  bytes: officialRecords ? fs.statSync(path.join(data, 'official-records.json')).size : 0,
+  status: officialRecordsOk ? 'passed' : 'failed'
+});
+addCheck('Independently verified official records', officialRecordsOk,
+  officialRecordsOk ? officialRecords.records.length + ' curated entries from the cited NFL Record & Fact Book.'
+    : 'Official-record dataset is missing, invalid or incomplete.');
 
 const allPassed = checks.every(check => check.status === 'passed') && missing.length === 0;
 const manifest = {
