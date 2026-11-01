@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "source_edition": "2025 Official NFL Record & Fact Book",
+  "source_url": "https://static.clubs.nfl.com/image/upload/patriots/fvc6qgwyqlztq1muztpi.pdf",
+  "statistics_current_through": "2024 season",
+  "publication_date": "2025-06-26",
+  "method_note": "Compiled by NFL Communications and Elias Sports Bureau. This is a curated reference from that edition, not a complete live record book or top-50 list.",
+  "records": [
+    {
+      "category": "Passing yards",
+      "record_type": "Career",
+      "rank": 1,
+      "holder": "Tom Brady",
+      "team": "New England Patriots / Tampa Bay Buccaneers",
+      "value": 89214,
+      "unit": "yards",
+      "season_or_years": "2000–2022"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Career",
+      "rank": 2,
+      "holder": "Drew Brees",
+      "team": "San Diego Chargers / New Orleans Saints",
+      "value": 80358,
+      "unit": "yards",
+      "season_or_years": "2001–2020"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Career",
+      "rank": 3,
+      "holder": "Peyton Manning",
+      "team": "Indianapolis Colts / Denver Broncos",
+      "value": 71940,
+      "unit": "yards",
+      "season_or_years": "1998–2015"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Single season",
+      "rank": 1,
+      "holder": "Peyton Manning",
+      "team": "Denver Broncos",
+      "value": 5477,
+      "unit": "yards",
+      "season_or_years": "2013"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Single season",
+      "rank": 2,
+      "holder": "Drew Brees",
+      "team": "New Orleans Saints",
+      "value": 5476,
+      "unit": "yards",
+      "season_or_years": "2011"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Single season",
+      "rank": 3,
+      "holder": "Tom Brady",
+      "team": "Tampa Bay Buccaneers",
+      "value": 5316,
+      "unit": "yards",
+      "season_or_years": "2021"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Single game",
+      "rank": 1,
+      "holder": "Norm Van Brocklin",
+      "team": "Los Angeles Rams",
+      "value": 554,
+      "unit": "yards",
+      "season_or_years": "1951"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Single game",
+      "rank": 2,
+      "holder": "Warren Moon",
+      "team": "Houston Oilers",
+      "value": 527,
+      "unit": "yards",
+      "season_or_years": "1990"
+    },
+    {
+      "category": "Passing yards",
+      "record_type": "Single game",
+      "rank": 3,
+      "holder": "Matt Schaub",
+      "team": "Houston Texans",
+      "value": 525,
+      "unit": "yards",
+      "season_or_years": "2012"
+    },
+    {
+      "category": "Passing touchdowns",
+      "record_type": "Career",
+      "rank": 1,
+      "holder": "Tom Brady",
+      "team": "New England Patriots / Tampa Bay Buccaneers",
+      "value": 649,
+      "unit": "TDs",
+      "season_or_years": "2000–2022"
+    },
+    {
+      "category": "Passing touchdowns",
+      "record_type": "Career",
+      "rank": 2,
+      "holder": "Drew Brees",
+      "team": "San Diego Chargers / New Orleans Saints",
+      "value": 571,
+      "unit": "TDs",
+      "season_or_years": "2001–2020"
+    },
+    {
+      "category": "Passing touchdowns",
+      "record_type": "Career",
+      "rank": 3,
+      "holder": "Peyton Manning",
+      "team": "Indianapolis Colts / Denver Broncos",
+      "value": 539,
+      "unit": "TDs",
+      "season_or_years": "1998–2015"
+    },
+    {
+      "category": "Passing touchdowns",
+      "record_type": "Single season",
+      "rank": 1,
+      "holder": "Peyton Manning",
+      "team": "Denver Broncos",
+      "value": 55,
+      "unit": "TDs",
+      "season_or_years": "2013"
+    },
+    {
+      "category": "Passing touchdowns",
+      "record_type": "Single season",
+      "rank": 2,
+      "holder": "Tom Brady",
+      "team": "New England Patriots",
+      "value": 50,
+      "unit": "TDs",
+      "season_or_years": "2007"
+    },
+    {
+      "category": "Passing touchdowns",
+      "record_type": "Single season",
+      "rank": 2,
+      "holder": "Patrick Mahomes",
+      "team": "Kansas City Chiefs",
+      "value": 50,
+      "unit": "TDs",
+      "season_or_years": "2018"
+    },
+    {
+      "category": "Passing touchdowns",
+      "record_type": "Single season",
+      "rank": 4,
+      "holder": "Peyton Manning",
+      "team": "Indianapolis Colts",
+      "value": 49,
+      "unit": "TDs",
+      "season_or_years": "2004"
+    },
+    {
+      "category": "Rushing yards",
+      "record_type": "Career",
+      "rank": 1,
+      "holder": "Emmitt Smith",
+      "team": "Dallas Cowboys / Arizona Cardinals",
+      "value": 18355,
+      "unit": "yards",
+      "season_or_years": "1990–2004"
+    },
+    {
+      "category": "Rushing yards",
+      "record_type": "Career",
+      "rank": 2,
+      "holder": "Walter Payton",
+      "team": "Chicago Bears",
+      "value": 16726,
+      "unit": "yards",
+      "season_or_years": "1975–1987"
+    },
+    {
+      "category": "Rushing yards",
+      "record_type": "Career",
+      "rank": 3,
+      "holder": "Frank Gore",
+      "team": "Multiple teams",
+      "value": 16000,
+      "unit": "yards",
+      "season_or_years": "2005–2020"
+    },
+    {
+      "category": "Rushing yards",
+      "record_type": "Single season",
+      "rank": 1,
+      "holder": "Eric Dickerson",
+      "team": "Los Angeles Rams",
+      "value": 2105,
+      "unit": "yards",
+      "season_or_years": "1984"
+    },
+    {
+      "category": "Rushing yards",
+      "record_type": "Single season",
+      "rank": 2,
+      "holder": "Adrian Peterson",
+      "team": "Minnesota Vikings",
+      "value": 2097,
+      "unit": "yards",
+      "season_or_years": "2012"
+    },
+    {
+      "category": "Rushing yards",
+      "record_type": "Single season",
+      "rank": 3,
+      "holder": "Jamal Lewis",
+      "team": "Baltimore Ravens",
+      "value": 2066,
+      "unit": "yards",
+      "season_or_years": "2003"
+    },
+    {
+      "category": "Receiving yards",
+      "record_type": "Career",
+      "rank": 1,
+      "holder": "Jerry Rice",
+      "team": "San Francisco 49ers / Oakland Raiders / Seattle Seahawks",
+      "value": 22895,
+      "unit": "yards",
+      "season_or_years": "1985–2004"
+    },
+    {
+      "category": "Receiving yards",
+      "record_type": "Career",
+      "rank": 2,
+      "holder": "Larry Fitzgerald",
+      "team": "Arizona Cardinals",
+      "value": 17492,
+      "unit": "yards",
+      "season_or_years": "2004–2020"
+    },
+    {
+      "category": "Receiving yards",
+      "record_type": "Career",
+      "rank": 3,
+      "holder": "Terrell Owens",
+      "team": "Multiple teams",
+      "value": 15934,
+      "unit": "yards",
+      "season_or_years": "1996–2010"
+    },
+    {
+      "category": "Receiving yards",
+      "record_type": "Single season",
+      "rank": 1,
+      "holder": "Calvin Johnson",
+      "team": "Detroit Lions",
+      "value": 1964,
+      "unit": "yards",
+      "season_or_years": "2012"
+    },
+    {
+      "category": "Receiving yards",
+      "record_type": "Single season",
+      "rank": 2,
+      "holder": "Cooper Kupp",
+      "team": "Los Angeles Rams",
+      "value": 1947,
+      "unit": "yards",
+      "season_or_years": "2021"
+    },
+    {
+      "category": "Receiving yards",
+      "record_type": "Single season",
+      "rank": 3,
+      "holder": "Julio Jones",
+      "team": "Atlanta Falcons",
+      "value": 1871,
+      "unit": "yards",
+      "season_or_years": "2015"
+    }
+  ]
+}
