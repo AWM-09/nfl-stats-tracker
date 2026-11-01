@@ -26,7 +26,7 @@ button,input,select{font:inherit;color:var(--text);background:#0b1722;border:1px
 <main>
 <header class="top">
  <div><div class="eyebrow">AlexMyrusTalksSports · player database</div><h1 class="title">NFL <span style="color:var(--accent)">Player Profiles</span></h1><p class="subtitle">Search players and explore their season-by-season statistical history. Share a profile link, inspect a season, or load the game log for one selected year.</p></div>
- <nav class="actions" aria-label="Main navigation"><a href="./index.html">Home</a><a href="./tracker.html">Stats Tracker</a><a href="./advanced.html">Advanced Lab</a><a href="./research.html">Research Lab</a><a href="./health.html">System Health</a></nav>
+ <nav class="actions" aria-label="Main navigation"><a href="./index.html">Home</a><a href="./tracker.html">Stats Tracker</a><a href="./teams.html">Team Platform</a><a href="./advanced.html">Advanced Lab</a><a href="./research.html">Research Lab</a><a href="./health.html">System Health</a></nav>
 </header>
 <section class="panel">
  <div class="profile-search">
@@ -50,7 +50,7 @@ button,input,select{font:inherit;color:var(--text);background:#0b1722;border:1px
   <div id="gameLogStatus" class="note" role="status" style="margin:10px 0">Choose a season and load its game log.</div><div id="gameLog"></div>
  </section>
 </section>
-<div class="foot note">Source: nflverse weekly player statistics. Coverage varies by statistic and season; a missing value means it was not available in the source, not that the player recorded zero. This is an independent fan-made project.</div>
+<div class="foot note">The profile statistic selector is generated from the complete metric catalogue used by the NFL Stats Tracker. A statistic appears for a season only when the source data supports it. Source: nflverse weekly player statistics. Coverage varies by statistic and season; a missing value means it was not available in the source, not that the player recorded zero. This is an independent fan-made project.</div>
 </main>
 <script>
 'use strict';
@@ -59,11 +59,29 @@ const fmt=(v,places=0)=>v===null||v===undefined||!Number.isFinite(Number(v))?'�
 const clean=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 let playerIndex=null,currentProfile=null,gameRowsCache=new Map();
-const groups={
- offense:[['Passing yards','passing_yards'],['Passing TDs','passing_tds'],['Interceptions thrown','passing_interceptions'],['Completion %','completion_pct'],['Passer rating','passer_rating'],['Yards per attempt','pass_yards_per_attempt'],['Passing EPA','passing_epa'],['CPOE','passing_cpoe'],['Passing success rate','passing_success_rate'],['Average time to throw','average_time_to_throw'],['Sacks taken','sacks_suffered'],['Rushing yards','rushing_yards'],['Carries','carries'],['Rushing TDs','rushing_tds'],['Yards per carry','rushing_yards_per_carry'],['Rushing success rate','rushing_success_rate'],['Receiving yards','receiving_yards'],['Receptions','receptions'],['Targets','targets'],['Receiving TDs','receiving_tds'],['Catch rate','catch_rate'],['Average depth of target','average_depth_of_target'],['Receiving EPA','receiving_epa']],
- defense:[['Sacks','def_sacks'],['Interceptions','def_interceptions'],['Solo tackles','def_tackles_solo'],['Assisted tackles','def_tackles_with_assist'],['Tackles for loss','def_tackles_for_loss'],['QB hits','def_qb_hits'],['Forced fumbles','def_forced_fumbles'],['Fumble recoveries','def_fumble_recoveries'],['Defensive TDs','def_tds']],
- special:[['Field goals made','fg_made'],['Field goals attempted','fg_attempts'],['Field-goal %','fg_pct'],['Longest field goal','fg_long'],['Punting average','punting_avg'],['Kick-return yards','kick_return_yards'],['Kick-return average','kick_return_avg'],['Punt-return yards','punt_return_yards']]
-};
+let groups={offense:[],defense:[],special:[],other:[]};
+function metricCategory(key){
+ if(/^(def_|total_tackles|defensive_impact)/.test(key))return 'defense';
+ if(/^(fg_|pat_|punting_|punt_|kick_|return_|punts_)/.test(key))return 'special';
+ if(/^(passing_|pass_|sacks_suffered|average_time_to_throw|td_int_ratio)/.test(key))return 'offense';
+ if(/^(rushing_|carries|longest_rush)/.test(key))return 'offense';
+ if(/^(receiving_|receptions|targets|catch_rate|average_depth_of_target|yards_from_scrimmage)/.test(key))return 'offense';
+ return 'other';
+}
+function setupMetricCatalogue(){
+ const keys=Array.isArray(playerIndex.metrics)?playerIndex.metrics:[];
+ const labels=playerIndex.metric_labels||{};
+ groups={offense:[],defense:[],special:[],other:[]};
+ keys.forEach(key=>groups[metricCategory(key)].push([labels[key]||key.replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase()),key]));
+ const categoryLabels={offense:'Offense',defense:'Defense',special:'Special teams',other:'Other'};
+ $('profileMetric').innerHTML=Object.keys(groups).filter(k=>groups[k].length).map(k=>'<option value="'+k+'">'+categoryLabels[k]+'</option>').join('');
+ const options=keys.map(key=>'<option value="'+clean(key)+'">'+clean(labels[key]||key)+'</option>').join('');
+ $('chartMetric').innerHTML=options;
+ if(keys.includes('passing_yards'))$('chartMetric').value='passing_yards';
+}
+function isPercentageMetric(key){
+ return key.includes('pct')||key.endsWith('_rate')||key.endsWith('_cpoe')||['completion_pct','catch_rate','passing_cpoe'].includes(key);
+}
 function parseCSV(text){
  const rows=[];let row=[],value='',quoted=false;
  for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){value+='"';i++;}else if(c==='"')quoted=false;else value+=c;}else if(c==='"')quoted=true;else if(c===','){row.push(value);value='';}else if(c==='\n'){row.push(value);rows.push(row);row=[];value='';}else if(c!=='\r')value+=c;}
@@ -112,10 +130,10 @@ function renderSelectedSeason(){
  const year=Number($('seasonSelect').value),phase=$('gamePhase').value,category=$('profileMetric').value;
  const selected=currentProfile.seasons.find(s=>s.season===year);
  if(!selected){$('seasonStats').innerHTML='<div class="empty">No data for this season.</div>';return;}
- const entries=groups[category].filter(([label,key])=>selected.stats?.[key]!==undefined);
+ const entries=(groups[category]||[]).filter(([label,key])=>selected.stats?.[key]!==undefined);
  $('seasonStats').innerHTML='<div class="note" style="margin-bottom:9px">'+clean((selected.teams||[]).join(', '))+' · '+selected.games+' games represented in the weekly statistics</div>'+
  '<div class="tablewrap"><table><thead><tr><th>Statistic</th><th class="num">Value</th></tr></thead><tbody>'+
- (entries.map(([label,key])=>'<tr><td>'+clean(label)+'</td><td class="num"><strong>'+fmt(selected.stats[key],key.includes('pct')||key==='completion_pct'||key==='catch_rate'?2:1)+(key==='completion_pct'||key==='catch_rate'||key==='fg_pct'?'%':'')+'</strong></td></tr>').join('')||'<tr><td colspan="2">No available values in this category.</td></tr>')+
+ (entries.map(([label,key])=>'<tr><td>'+clean(label)+'</td><td class="num"><strong>'+fmt(selected.stats[key],isPercentageMetric(key)?2:1)+(isPercentageMetric(key)?'%':'')+'</strong></td></tr>').join('')||'<tr><td colspan="2">No available values in this category.</td></tr>')+
  '</tbody></table></div>';
  if(phase!=='ALL')$('gameLogStatus').textContent='Game log filter set to '+(phase==='REG'?'regular season':'playoffs')+'. Load the selected season to view games.';
 }
@@ -150,7 +168,7 @@ async function init(){
   if(!response.ok)throw new Error('Player directory unavailable (HTTP '+response.status+').');
   playerIndex=await response.json();
   if(playerIndex.version!==1||!Array.isArray(playerIndex.players))throw new Error('Player directory has an unsupported format.');
-  $('directoryNote').textContent=playerIndex.players.length.toLocaleString()+' players · '+playerIndex.loaded+' seasons indexed · 2000–2026';
+  setupMetricCatalogue();\n  $('directoryNote').textContent=playerIndex.players.length.toLocaleString()+' players · '+playerIndex.loaded+' seasons indexed · '+(playerIndex.metrics||[]).length+' selectable metrics · 2000–2026';
   $('playerNames').innerHTML=playerIndex.players.map(p=>'<option value="'+clean(p.name)+'"></option>').join('');
   $('status').textContent='Player directory ready. Search for a player to open a shareable profile.';
   const params=new URLSearchParams(location.search),requested=params.get('player')||'';
