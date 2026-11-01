@@ -36,7 +36,8 @@ const teamDataPath = path.join(site, 'data', 'team-platform.json');
 assert.ok(fs.existsSync(teamDataPath), 'Published team-platform.json is missing.');
 const teamData = JSON.parse(fs.readFileSync(teamDataPath, 'utf8'));
 assert.equal(teamData.version, 1, 'Team Platform data version is invalid.');
-assert.ok(Object.keys(teamData.teams || {}).length >= 30, 'Team Platform must contain at least 30 teams.');
+assert.equal(Object.keys(teamData.teams || {}).length, 32, 'Team Platform must contain all 32 current franchises.');
+assert.ok(Object.values(teamData.teams).every(team => Array.isArray(team.roster)), 'Every franchise must expose a roster array, even when the source feed is incomplete.');
 
 const home = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
 for (const target of ['tracker.html','player.html','teams.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html']) {

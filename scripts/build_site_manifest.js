@@ -101,10 +101,11 @@ addCheck('Searchable player profiles', playersOk, playersOk ? playerCount.toLoca
 
 const teamPlatform = readJson('team-platform.json');
 const teamPlatformOk = !!teamPlatform && teamPlatform.version === 1 &&
-  Object.keys(teamPlatform.teams || {}).length >= 30 &&
+  Object.keys(teamPlatform.teams || {}).length === 32 &&
+  Object.values(teamPlatform.teams || {}).every(team => Array.isArray(team.roster)) &&
   Array.isArray(teamPlatform.teams.NE?.roster);
 datasets.push({ name: 'Franchise roster and contract dossier', seasons: teamPlatform ? String(teamPlatform.season || '—') : '—', files: teamPlatformOk ? 1 : 0, expected_files: 1, bytes: teamPlatform ? fs.statSync(path.join(data, 'team-platform.json')).size : 0, status: teamPlatformOk ? 'passed' : 'failed' });
-addCheck('Franchise roster and contract dossier', teamPlatformOk, teamPlatformOk ? Object.keys(teamPlatform.teams).length + ' team dossiers loaded.' : 'Team dossier is missing, invalid or has incomplete franchise coverage.');
+addCheck('Franchise roster and contract dossier', teamPlatformOk, teamPlatformOk ? Object.keys(teamPlatform.teams).length + ' team dossiers loaded.' : 'Team dossier must contain all 32 current franchises with a roster array for each (empty is allowed when the source feed has no roster).');
 
 const allPassed = checks.every(check => check.status === 'passed') && missing.length === 0;
 const manifest = {

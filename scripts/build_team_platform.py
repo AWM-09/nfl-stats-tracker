@@ -7,6 +7,19 @@ from pathlib import Path
 
 CAP_LIMITS={1994:34.6,1995:37.1,1996:40.8,1997:41.5,1998:52.4,1999:57.3,2000:63.2,2001:67.4,2002:71.1,2003:75.0,2004:80.6,2005:85.5,2006:102.0,2007:109.0,2008:116.0,2009:128.0,2011:120.375,2012:120.6,2013:123.0,2014:133.0,2015:143.28,2016:155.27,2017:167.0,2018:177.2,2019:188.2,2020:198.2,2021:182.5,2022:208.2,2023:224.8,2024:255.4,2025:279.2,2026:301.2}
 STATUS_LABELS={"ACT":"Active roster","DEV":"Practice squad","PUP":"Physically unable to perform","RES":"Reserve list","INA":"Inactive","IR":"Injured reserve","SUS":"Suspended","RET":"Retired","CUT":"Released","UFA":"Unrestricted free agent","EXE":"Commissioner exempt"}
+CURRENT_TEAMS={
+"ARI":"Arizona Cardinals","ATL":"Atlanta Falcons","BAL":"Baltimore Ravens","BUF":"Buffalo Bills",
+"CAR":"Carolina Panthers","CHI":"Chicago Bears","CIN":"Cincinnati Bengals","CLE":"Cleveland Browns",
+"DAL":"Dallas Cowboys","DEN":"Denver Broncos","DET":"Detroit Lions","GB":"Green Bay Packers",
+"HOU":"Houston Texans","IND":"Indianapolis Colts","JAX":"Jacksonville Jaguars","KC":"Kansas City Chiefs",
+"LAC":"Los Angeles Chargers","LAR":"Los Angeles Rams","LV":"Las Vegas Raiders","MIA":"Miami Dolphins",
+"MIN":"Minnesota Vikings","NE":"New England Patriots","NO":"New Orleans Saints","NYG":"New York Giants",
+"NYJ":"New York Jets","PHI":"Philadelphia Eagles","PIT":"Pittsburgh Steelers","SEA":"Seattle Seahawks",
+"SF":"San Francisco 49ers","TB":"Tampa Bay Buccaneers","TEN":"Tennessee Titans","WAS":"Washington Commanders"}
+TEAM_ALIASES={"JAC":"JAX","LA":"LAR","STL":"LAR","OAK":"LV","SD":"LAC","SDG":"LAC","WSH":"WAS"}
+def canonical_team(value):
+    code=str(value or "").strip().upper()
+    return TEAM_ALIASES.get(code,code)
 def norm(value):
     text=unicodedata.normalize("NFKD",str(value or ""))
     return re.sub(r"[^a-z0-9]","", "".join(c for c in text if not unicodedata.combining(c)).lower())
@@ -47,7 +60,7 @@ def build_platform(data_dir="data",year=2026):
         if name: contracts[norm(name)].append(row)
     injuries=defaultdict(list)
     for row in injury_rows:
-        name=first(row,["full_name","player_name","player"]);team=first(row,["team","team_abbr"]).upper()
+        name=first(row,["full_name","player_name","player"]);team=canonical_team(first(row,["team","team_abbr"]))
         if name and team: injuries[(team,norm(name))].append(row)
     depths=defaultdict(list)
     for row in depth_rows:
@@ -55,7 +68,7 @@ def build_platform(data_dir="data",year=2026):
         if name and team: depths[(team,norm(name))].append(row)
     metadata={}
     for row in team_rows:
-        code=first(row,["team_abbr","team","team_code"]).upper()
+        code=canonical_team(first(row,["team_abbr","team","team_code"]))
         if code:
             metadata[code]={"name":first(row,["team_name","team_full_name","team_nick"]) or code,
              "conference":first(row,["team_conf","conference"]),"division":first(row,["team_division","division"]),
@@ -63,7 +76,7 @@ def build_platform(data_dir="data",year=2026):
              "logo":first(row,["team_logo_espn","team_logo_wikipedia","team_logo"])}
     grouped=defaultdict(list)
     for row in latest:
-        team=first(row,["team","team_abbr","recent_team"]).upper()
+        team=canonical_team(first(row,["team","team_abbr","recent_team"]))
         name=first(row,["full_name","player_name","player_display_name","name"])
         if not team or not name: continue
         choices=contracts.get(norm(name),[])
@@ -102,7 +115,8 @@ def build_platform(data_dir="data",year=2026):
              "practice_status":first(injury,["practice_status"]),"updated":first(injury,["date_modified"])}
         grouped[team].append(player)
     result={}
-    for team,players in grouped.items():
+    for team in CURRENT_TEAMS:
+        players=grouped.get(team,[])
         players.sort(key=lambda p:(p["position"],p["name"]))
         found=[p["contract"] for p in players if p["contract"]]
         apys=[c["apy"] for c in found if c.get("apy") is not None]
@@ -116,7 +130,7 @@ def build_platform(data_dir="data",year=2026):
           "note":"Annual contract value is not a current-year cap charge. The source does not provide every cap adjustment, dead-money charge, restructure or carryover, so team cap space is not calculated."}}
     payload={"version":1,"season":year,"generated_at":datetime.now(timezone.utc).isoformat(),"roster_week":latest_week,
      "teams":result,"league_cap_history_millions":CAP_LIMITS,"coverage":{"roster_rows":len(roster_rows),"latest_roster_rows":len(latest),"contracts_rows":len(contract_rows),
-      "injury_rows":len(injury_rows),"depth_chart_rows":len(depth_rows),"teams_with_rosters":len(result)},
+      "injury_rows":len(injury_rows),"depth_chart_rows":len(depth_rows),"franchises":len(result),"teams_with_rosters":sum(bool(v["roster"]) for v in result.values()),"teams_missing_rosters":[k for k,v in result.items() if not v["roster"]]},
      "sources":{"roster":"nflverse weekly rosters","contracts":"OverTheCap historical contracts via nflverse",
       "injuries":"nflverse injury reports where available","depth_chart":"nflverse depth charts","team_metadata":"nflverse team metadata"}}
     root.mkdir(parents=True,exist_ok=True)

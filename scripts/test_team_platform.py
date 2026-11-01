@@ -19,7 +19,7 @@ class TeamPlatformTests(unittest.TestCase):
    self.write_csv(root/"depth_charts_2026.csv",[{"team":"NE","player_name":"Test Player","pos_name":"Quarterback","pos_rank":"1","dt":"2026-10-31"}])
    self.write_csv(root/"teams_colors_logos.csv",[{"team_abbr":"NE","team_name":"New England Patriots","team_conf":"AFC","team_division":"East","team_color":"002244"}])
    data=build_platform(root,2026);team=data["teams"]["NE"];p=team["roster"][0]
-   self.assertEqual(data["roster_week"],9);self.assertEqual(p["contract"]["years_left_estimate"],2)
+   self.assertEqual(data["roster_week"],9);self.assertEqual(len(data["teams"]),32);self.assertEqual(data["coverage"]["teams_with_rosters"],1);self.assertEqual(len(data["coverage"]["teams_missing_rosters"]),31);self.assertEqual(p["contract"]["years_left_estimate"],2)
    self.assertEqual(p["contract"]["apy"],25);self.assertEqual(p["injury"]["report_status"],"Questionable")
    self.assertEqual(p["depth_rank"],1);self.assertEqual(team["salary_cap"]["league_limit_millions"],301.2)
    self.assertIsNone(team["salary_cap"]["cap_space_millions"]);self.assertEqual(team["team"]["name"],"New England Patriots")
@@ -27,5 +27,5 @@ class TeamPlatformTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);self.write_csv(root/"roster_weekly_2026.csv",[{"season":"2026","week":"1","team":"BUF","full_name":"Test Player","position":"RB","status":"ACT"}])
    data=build_platform(root,2026);p=data["teams"]["BUF"]["roster"][0]
-   self.assertIsNone(p["contract"]);self.assertIsNone(p["injury"]);self.assertIsNone(data["teams"]["BUF"]["salary_cap"]["cap_space_millions"])
+   self.assertIsNone(p["contract"]);self.assertIsNone(p["injury"]);self.assertIsNone(data["teams"]["BUF"]["salary_cap"]["cap_space_millions"]);self.assertEqual(len(data["teams"]),32);self.assertEqual(data["teams"]["NE"]["roster"],[])
 if __name__=="__main__":unittest.main()
