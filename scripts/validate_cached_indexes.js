@@ -15,7 +15,7 @@ const records=JSON.parse(fs.readFileSync('data/records-index.json','utf8'));
 const players=JSON.parse(fs.readFileSync('data/player-index.json','utf8'));
 const expected=sandbox.__metrics.slice().sort();
 const actual=(players.metrics||[]).slice().sort();
-if(records.algorithm_version!==2||players.algorithm_version!==2)throw new Error('Cached indexes use an older record algorithm.');
+if(records.algorithm_version!==3||players.algorithm_version!==3)throw new Error('Cached indexes use an older record algorithm.');
 if(records.version!==1||players.version!==1)throw new Error('Cached index schema version mismatch.');
 if((records.loaded_years||[]).length!==27||(players.loaded_years||[]).length!==27)throw new Error('Cached indexes do not cover all 27 seasons.');
 if(expected.length!==actual.length||expected.some((x,i)=>x!==actual[i]))throw new Error('Cached Player Profile metric catalogue does not match tracker.html.');

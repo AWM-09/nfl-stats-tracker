@@ -74,7 +74,7 @@ vm.runInNewContext(source, sandbox, { timeout: 20000 });
 
   const output = {
     version: 1,
-    algorithm_version: 2,
+    algorithm_version: 3,
     generated_at: new Date().toISOString(),
     loaded: result.loaded,
     loaded_years: result.loadedYears || [],
@@ -89,7 +89,7 @@ vm.runInNewContext(source, sandbox, { timeout: 20000 });
 
   const playerOutput = {
     version: 1,
-    algorithm_version: 2,
+    algorithm_version: 3,
     generated_at: output.generated_at,
     loaded: result.loaded,
     loaded_years: result.loadedYears || [],
