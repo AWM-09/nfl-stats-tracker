@@ -32,6 +32,13 @@ const teamPage = fs.readFileSync(path.join(site, 'teams.html'), 'utf8');
 for (const id of ['franchiseDossier','teamIdentity','dossierKpis','dossierTabs','dossierContent']) {
   assert.ok(teamPage.includes('id="'+id+'"'), 'Team Platform is missing ' + id);
 }
+const officialRecordsPath = path.join(site, 'data', 'official-records.json');
+assert.ok(fs.existsSync(officialRecordsPath), 'Published official-records.json is missing.');
+const officialRecords = JSON.parse(fs.readFileSync(officialRecordsPath, 'utf8'));
+assert.equal(officialRecords.version, 1, 'Official records reference version is invalid.');
+assert.ok(Array.isArray(officialRecords.records) && officialRecords.records.length >= 10,
+  'Official records reference is empty or incomplete.');
+
 const teamDataPath = path.join(site, 'data', 'team-platform.json');
 assert.ok(fs.existsSync(teamDataPath), 'Published team-platform.json is missing.');
 const teamData = JSON.parse(fs.readFileSync(teamDataPath, 'utf8'));
