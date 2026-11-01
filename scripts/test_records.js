@@ -47,7 +47,7 @@ test('player profile summaries combine weekly stats accurately', () => {
  assert.equal(profile.seasons[0].stats.passing_interceptions,1);
  assert.equal(profile.seasons[0].stats.completion_pct,66.667);
  assert.equal(profile.seasons[0].stats.rushing_yards,20);
- assert.ok(sandbox.__profileMetricKeys.length>=30,'Profile metric catalogue should include the key statistical categories');
+ assert.equal(sandbox.__profileMetricKeys.length,sandbox.__recordMetricKeys.length,'Player Profiles must expose every metric in the shared analytics catalogue.');\n assert.deepEqual(Array.from(sandbox.__profileMetricKeys).sort(),Array.from(sandbox.__recordMetricKeys).sort(),'Player profile and analytics metric catalogues must match exactly.');
 });
 test('season passing yards sum weekly totals', () => {
  near(sandbox.recordAggregateValue([row({passing_yards:'400'}),row({week:2,passing_yards:'300'})],'passing_yards','season'),700,'Passing yards');
