@@ -23,6 +23,28 @@ class TeamPlatformTests(unittest.TestCase):
    self.assertEqual(p["contract"]["apy"],25);self.assertEqual(p["contract"]["end_year_estimate"],2027);self.assertEqual(p["injury"]["report_status"],"Questionable")
    self.assertEqual(p["depth_rank"],1);self.assertEqual(team["salary_cap"]["league_limit_millions"],301.2)
    self.assertIsNone(team["salary_cap"]["cap_space_millions"]);self.assertEqual(team["team"]["name"],"New England Patriots")
+ def test_each_team_uses_its_latest_available_week_and_contract_name_fallback(self):
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d)
+   self.write_csv(root/"roster_weekly_2026.csv",[
+    {"season":"2026","week":"8","team":"ARI","full_name":"Arizona Player","position":"DB","status":"ACT","gsis_id":"ARI-ID"},
+    {"season":"2026","week":"7","team":"HST","full_name":"Houston Player","position":"QB","status":"ACT","gsis_id":"ROSTER-ID-DOES-NOT-MATCH"},
+    {"season":"2026","week":"6","team":"HOU","full_name":"Old Houston Player","position":"RB","status":"ACT","gsis_id":"OLD-ID"}])
+   with gzip.open(root/"historical_contracts.csv.gz","wt",newline="",encoding="utf-8") as f:
+    w=csv.DictWriter(f,fieldnames=["player","team","is_active","year_signed","years","value","apy","guaranteed","gsis_id"])
+    w.writeheader()
+    w.writerow({"player":"Houston Player","team":"HOU","is_active":"TRUE","year_signed":"2024","years":"4","value":"100000000","apy":"25000000","guaranteed":"60000000","gsis_id":"CONTRACT-ID"})
+   data=build_platform(root,2026)
+   hou=data["teams"]["HOU"]
+   self.assertEqual(data["roster_week"],8)
+   self.assertEqual(data["teams"]["ARI"]["roster_week"],8)
+   self.assertEqual(hou["roster_week"],7)
+   self.assertEqual(len(hou["roster"]),1)
+   self.assertEqual(hou["roster"][0]["name"],"Houston Player")
+   self.assertEqual(hou["roster"][0]["contract"]["years_left_estimate"],2)
+   self.assertEqual(hou["roster"][0]["contract"]["end_year_estimate"],2027)
+   self.assertEqual(hou["roster"][0]["contract"]["apy"],25)
+   self.assertEqual(data["coverage"]["teams_missing_rosters"].count("HOU"),0)
  def test_optional_feeds_do_not_fabricate_data(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);self.write_csv(root/"roster_weekly_2026.csv",[{"season":"2026","week":"1","team":"BUF","full_name":"Test Player","position":"RB","status":"ACT"}])
