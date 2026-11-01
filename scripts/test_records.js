@@ -34,7 +34,7 @@ test('player identities with matching names remain distinct when source IDs diff
  const a=sandbox.__recordPlayerKey(row({player_id:'PLAYER-A',player:'Chris Smith'}));
  const b=sandbox.__recordPlayerKey(row({player_id:'PLAYER-B',player:'Chris Smith'}));
  assert.notEqual(a,b);
- assert.equal(sandbox.__recordPlayerKey(row({player:'Fallback Player'})),'name:fallbackplayer');
+ assert.equal(sandbox.__recordPlayerKey(row({player:'Fallback Player'})),'name:fallback player');
 });
 
 test('player profile summaries combine weekly stats accurately', () => {
