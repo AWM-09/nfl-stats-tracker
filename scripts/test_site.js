@@ -7,7 +7,7 @@ const path = require('node:path');
 const site = path.resolve('site');
 const expectedPages = [
   'index.html','tracker.html','player.html','health.html','advanced.html',
-  'research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html'
+  'research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','teams.html'
 ];
 
 for (const page of expectedPages) {
@@ -29,7 +29,7 @@ for (const page of expectedPages) {
 }
 
 const home = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
-for (const target of ['tracker.html','player.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html']) {
+for (const target of ['tracker.html','player.html','teams.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html']) {
   assert.ok(home.includes('./' + target), 'Homepage is missing a link to ' + target);
 }
 
@@ -47,7 +47,7 @@ assert.ok(health.includes('./data/site-manifest.json'), 'Health Centre must load
 
 // Static interaction contracts catch accidentally removed controls or core
 // functions on the tools that are not covered by the formula-specific suites.
-const toolContracts = {
+const toolContracts = {\n  'teams.html': {\n    ids: ['season','phase','team','metric','rankBody','compare','profileBody','trendChart','teamGrid'],\n    functions: ['loadSeason','loadHistoricalTrend','render','metricValue']\n  },
   'advanced.html': {
     ids: ['overview','players','teams','situational','games','records','scenarios','content','playerPick','runScenario','fourthCalc'],
     functions: ['renderPlayer','renderCareer','renderTeams','renderSituational','renderGames','renderRecords','renderScenario','fourthDown','makeContent']
@@ -106,4 +106,4 @@ const build = JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'));
 assert.ok(build.commit, 'Build metadata is missing the source commit.');
 assert.ok(build.workflow_run_id, 'Build metadata is missing the workflow run ID.');
 
-console.log('Site integration checks passed: ' + expectedPages.length + ' pages, local links, responsive metadata, player profiles, Records index, health manifest and build metadata.');
+console.log('Site integration checks passed: ' + expectedPages.length + ' pages, local links, responsive metadata, Team Platform, player profiles, Records index, health manifest and build metadata.');
