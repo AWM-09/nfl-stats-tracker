@@ -72,7 +72,7 @@ function setupMetricCatalogue(){
  const keys=Array.isArray(playerIndex.metrics)?playerIndex.metrics:[];
  const labels=playerIndex.metric_labels||{};
  groups={offense:[],defense:[],special:[],other:[]};
- keys.forEach(key=>groups[metricCategory(key)].push([labels[key]||key.replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase()),key]));
+ keys.forEach(key=>groups[metricCategory(key)].push([labels[key]||key.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),key]));
  const categoryLabels={offense:'Offense',defense:'Defense',special:'Special teams',other:'Other'};
  $('profileMetric').innerHTML=Object.keys(groups).filter(k=>groups[k].length).map(k=>'<option value="'+k+'">'+categoryLabels[k]+'</option>').join('');
  const options=keys.map(key=>'<option value="'+clean(key)+'">'+clean(labels[key]||key)+'</option>').join('');
