@@ -8,9 +8,7 @@ const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
  .find(item => item[1].includes('function recordAggregateValue') && item[1].includes('function metricValue'));
 assert.ok(match, 'Could not extract main dashboard script.');
 const original = match[1];
-const source = original.replace(/
-init\(\);\s*$/, '
-');
+const source = original.replace(/\ninit\(\);\s*$/, '\n');
 assert.notEqual(source, original, 'Could not remove browser startup call for isolated tests.');
 const sandbox = vm.createContext({
  console: { info() {}, log() {}, warn() {}, error() {} },
@@ -18,10 +16,7 @@ const sandbox = vm.createContext({
  window: {},
  localStorage: { getItem() { return null; }, setItem() {} }
 });
-vm.runInNewContext(source + '
-globalThis.__recordMetricKeys = Object.keys(metrics);
-globalThis.__profileMetricKeys = PROFILE_METRICS;
-globalThis.__addPlayerProfileSeason = addPlayerProfileSeason;', sandbox, { timeout: 10000 });
+vm.runInNewContext(source + '\nglobalThis.__recordMetricKeys = Object.keys(metrics);\nglobalThis.__profileMetricKeys = PROFILE_METRICS;\nglobalThis.__addPlayerProfileSeason = addPlayerProfileSeason;', sandbox, { timeout: 10000 });
 function row(values) {
  return Object.assign({ player:'Audit Player',team:'NE',position:'QB',season:2025,week:1,season_type:'REG' }, values);
 }
