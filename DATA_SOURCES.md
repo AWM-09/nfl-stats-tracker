@@ -3,12 +3,15 @@
 ## Sources
 
 - Weekly player statistics, schedules and play-by-play: [nflverse data repository](https://github.com/nflverse/nflverse-data).
-- Independent checking of current statistics and major records: [official NFL statistics](https://www.nfl.com/stats/).
+- Official historical record reference: the [2025 NFL Record & Fact Book](https://static.clubs.nfl.com/image/upload/patriots/fvc6qgwyqlztq1muztpi.pdf), compiled by NFL Communications and Elias Sports Bureau; that edition states its statistics are current through the 2024 season.
+- Current player statistics for spot checks: [official NFL statistics](https://www.nfl.com/stats/).
 - Official NFL rule information is linked from the Rulebook tool.
 
 ## Method notes
 
-- Weekly player CSVs are the source for player performance queries. Derived season rates use combined numerator/denominator fields when available.
+- Weekly player CSVs are the source for exploratory player-performance queries. Derived season rates use combined numerator/denominator fields when available.
+- The Records page separates a manually transcribed official-NFL-record-book reference from dataset-derived rankings. Dataset-derived rankings are explicitly not presented as official all-time records.
+- Franchise roster snapshots select the latest available week independently for each team. The System Health build fails when a franchise has fewer than 20 roster entries or lacks its own snapshot week.
 - Shareable Player Profiles are generated from those same weekly files during the Records precomputation stage. Season summaries are pre-aggregated; game logs are fetched for one selected season when requested.
 - A blank or absent field is not a genuine zero. Advanced tracking statistics have shorter historical coverage than traditional box-score statistics.
 - Franchise W-L-T and point totals are calculated from completed rows in the published schedule file. Historical aliases are normalized where known; verify major all-time claims externally.
