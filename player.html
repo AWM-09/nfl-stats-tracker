@@ -64,7 +64,7 @@ function metricCategory(key){
  if(/^(def_|total_tackles|defensive_impact)/.test(key))return 'defense';
  if(/^(fg_|pat_|punting_|punt_|kick_|return_|punts_)/.test(key))return 'special';
  if(/^(passing_|pass_|sacks_suffered|average_time_to_throw|td_int_ratio)/.test(key))return 'offense';
- if(/^(rushing_|carries|longest_rush)/.test(key))return 'offense';
+ if(/^(rushing_|carries|longest_rush|total_touchdowns|total_offensive_yards)/.test(key))return 'offense';
  if(/^(receiving_|receptions|targets|catch_rate|average_depth_of_target|yards_from_scrimmage)/.test(key))return 'offense';
  return 'other';
 }
