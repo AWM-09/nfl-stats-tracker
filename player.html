@@ -168,7 +168,8 @@ async function init(){
   if(!response.ok)throw new Error('Player directory unavailable (HTTP '+response.status+').');
   playerIndex=await response.json();
   if(playerIndex.version!==1||!Array.isArray(playerIndex.players))throw new Error('Player directory has an unsupported format.');
-  setupMetricCatalogue();\n  $('directoryNote').textContent=playerIndex.players.length.toLocaleString()+' players · '+playerIndex.loaded+' seasons indexed · '+(playerIndex.metrics||[]).length+' selectable metrics · 2000–2026';
+  setupMetricCatalogue();
+  $('directoryNote').textContent=playerIndex.players.length.toLocaleString()+' players · '+playerIndex.loaded+' seasons indexed · '+(playerIndex.metrics||[]).length+' selectable metrics · 2000–2026';
   $('playerNames').innerHTML=playerIndex.players.map(p=>'<option value="'+clean(p.name)+'"></option>').join('');
   $('status').textContent='Player directory ready. Search for a player to open a shareable profile.';
   const params=new URLSearchParams(location.search),requested=params.get('player')||'';
