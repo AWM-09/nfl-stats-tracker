@@ -1240,7 +1240,9 @@ function renderOfficialRecords(){
  if(!officialRecordsPayload||!recordsIndexPayload)return;
  const metricKey=$('officialRecordsCategory').value;
  const metricMeta=metrics[metricKey];
- const officialEntries=(officialRecordsPayload.records||[]).filter(r=>r.metric===metricKey);
+ const metricToOfficialCategory={passing_yards:'Passing yards',passing_tds:'Passing touchdowns',rushing_yards:'Rushing yards',receiving_yards:'Receiving yards'};
+ const officialCategory=metricToOfficialCategory[metricKey]||'';
+ const officialEntries=officialCategory?(officialRecordsPayload.records||[]).filter(r=>r.category===officialCategory):[];
  const modes=[['career','Career'],['season','Single season'],['weekly','Single game']];
  const phase='REG';
  const datasetGroups=modes.map(([mode,label])=>{
