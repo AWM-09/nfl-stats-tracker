@@ -3,10 +3,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const html = fs.readFileSync('tracker.html', 'utf8');
-assert.ok(html.includes("./data/records-index.json"), 'Records page should load its precomputed index.');
 assert.ok(html.includes("./data/official-records.json"), 'Records page should load the independently verified NFL record reference.');
-assert.ok(html.includes("not the official NFL record book"), 'Dataset-derived rankings must not be presented as official all-time records.');
-assert.ok(html.includes("Independently checked NFL records"), 'Official records section should be visible.');
+assert.ok(html.includes("Verified NFL records"), 'Official records section should be visible.');
+assert.ok(html.includes("Dataset-derived player-week rankings are deliberately not shown here"), 'Unverified weekly-data rankings must not be displayed as records.');
+assert.ok(!html.includes('id="recordsMetric"'), 'The unverified dataset-derived leaderboard controls must be removed from Records.');
+assert.ok(!html.includes("Dataset-derived historical rankings"), 'The unverified dataset-derived table must not be shown.');
 const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
  .find(item => item[1].includes('function recordAggregateValue') && item[1].includes('function metricValue'));
 assert.ok(match, 'Could not extract main dashboard script.');

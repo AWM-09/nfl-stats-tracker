@@ -17,9 +17,57 @@ CURRENT_TEAMS={
 "NYJ":"New York Jets","PHI":"Philadelphia Eagles","PIT":"Pittsburgh Steelers","SEA":"Seattle Seahawks",
 "SF":"San Francisco 49ers","TB":"Tampa Bay Buccaneers","TEN":"Tennessee Titans","WAS":"Washington Commanders"}
 TEAM_ALIASES={"JAC":"JAX","HST":"HOU","LA":"LAR","STL":"LAR","OAK":"LV","SD":"LAC","SDG":"LAC","WSH":"WAS","WFT":"WAS","CLV":"CLE","ARZ":"ARI"}
+TEAM_NAME_ALIASES={
+"ARIZONA":"ARI","ARIZONA CARDINALS":"ARI","CARDINALS":"ARI",
+"ATLANTA":"ATL","ATLANTA FALCONS":"ATL","FALCONS":"ATL",
+"BALTIMORE":"BAL","BALTIMORE RAVENS":"BAL","RAVENS":"BAL",
+"BUFFALO":"BUF","BUFFALO BILLS":"BUF","BILLS":"BUF",
+"CAROLINA":"CAR","CAROLINA PANTHERS":"CAR","PANTHERS":"CAR",
+"CHICAGO":"CHI","CHICAGO BEARS":"CHI","BEARS":"CHI",
+"CINCINNATI":"CIN","CINCINNATI BENGALS":"CIN","BENGALS":"CIN",
+"CLEVELAND":"CLE","CLEVELAND BROWNS":"CLE","BROWNS":"CLE",
+"DALLAS":"DAL","DALLAS COWBOYS":"DAL","COWBOYS":"DAL",
+"DENVER":"DEN","DENVER BRONCOS":"DEN","BRONCOS":"DEN",
+"DETROIT":"DET","DETROIT LIONS":"DET","LIONS":"DET",
+"GREEN BAY":"GB","GREEN BAY PACKERS":"GB","PACKERS":"GB",
+"HOUSTON":"HOU","HOUSTON TEXANS":"HOU","TEXANS":"HOU",
+"INDIANAPOLIS":"IND","INDIANAPOLIS COLTS":"IND","COLTS":"IND",
+"JACKSONVILLE":"JAX","JACKSONVILLE JAGUARS":"JAX","JAGUARS":"JAX",
+"KANSAS CITY":"KC","KANSAS CITY CHIEFS":"KC","CHIEFS":"KC",
+"LOS ANGELES CHARGERS":"LAC","SAN DIEGO CHARGERS":"LAC","CHARGERS":"LAC",
+"LOS ANGELES RAMS":"LAR","ST LOUIS RAMS":"LAR","RAMS":"LAR",
+"LAS VEGAS":"LV","LAS VEGAS RAIDERS":"LV","OAKLAND RAIDERS":"LV","RAIDERS":"LV",
+"MIAMI":"MIA","MIAMI DOLPHINS":"MIA","DOLPHINS":"MIA",
+"MINNESOTA":"MIN","MINNESOTA VIKINGS":"MIN","VIKINGS":"MIN",
+"NEW ENGLAND":"NE","NEW ENGLAND PATRIOTS":"NE","PATRIOTS":"NE",
+"NEW ORLEANS":"NO","NEW ORLEANS SAINTS":"NO","SAINTS":"NO",
+"NEW YORK GIANTS":"NYG","GIANTS":"NYG",
+"NEW YORK JETS":"NYJ","JETS":"NYJ",
+"PHILADELPHIA":"PHI","PHILADELPHIA EAGLES":"PHI","EAGLES":"PHI",
+"PITTSBURGH":"PIT","PITTSBURGH STEELERS":"PIT","STEELERS":"PIT",
+"SEATTLE":"SEA","SEATTLE SEAHAWKS":"SEA","SEAHAWKS":"SEA",
+"SAN FRANCISCO":"SF","SAN FRANCISCO 49ERS":"SF","49ERS":"SF",
+"TAMPA BAY":"TB","TAMPA BAY BUCCANEERS":"TB","BUCCANEERS":"TB","BUCS":"TB",
+"TENNESSEE":"TEN","TENNESSEE TITANS":"TEN","TITANS":"TEN",
+"WASHINGTON":"WAS","WASHINGTON COMMANDERS":"WAS","COMMANDERS":"WAS",
+"WASHINGTON FOOTBALL TEAM":"WAS","WASHINGTON REDSKINS":"WAS"
+}
 def canonical_team(value):
-    code=str(value or "").strip().upper()
-    return TEAM_ALIASES.get(code,code)
+    raw=str(value or "").strip()
+    code=raw.upper()
+    if code in CURRENT_TEAMS: return code
+    if code in TEAM_ALIASES: return TEAM_ALIASES[code]
+    normalized=re.sub(r"[^A-Z0-9]","",code)
+    for alias,target in TEAM_NAME_ALIASES.items():
+        if re.sub(r"[^A-Z0-9]","",alias)==normalized: return target
+    return code
+def contract_team_codes(value):
+    parts=re.split(r"\\s*/\\s*|\\s*,\\s*|\\s+OR\\s+",str(value or "").upper())
+    return {canonical_team(part) for part in parts if part.strip()}
+def contract_matches_team(row,team):
+    raw=first(row,["team","team_abbr","team_code"])
+    if not raw: return False
+    return team in contract_team_codes(raw)
 def norm(value):
     text=unicodedata.normalize("NFKD",str(value or ""))
     return re.sub(r"[^a-z0-9]","", "".join(c for c in text if not unicodedata.combining(c)).lower())
@@ -35,8 +83,12 @@ def number(value):
         return n if n==n and abs(n)!=float("inf") else None
     except (TypeError,ValueError): return None
 def millions(value):
+    # OverTheCap/nflreadr contract fields are already in USD millions
+    # (e.g. value=275, APY=55). Also tolerate legacy dollar-denominated files.
     n=number(value)
-    return round(n/1_000_000,3) if n is not None else None
+    if n is None: return None
+    if abs(n)>=100_000: n/=1_000_000
+    return round(n,3)
 def truth(value): return str(value or "").strip().lower() in ("true","1","yes","y")
 def norm_id(value):
     return re.sub(r"[^a-z0-9]", "", str(value or "").strip().lower())
@@ -108,25 +160,33 @@ def build_platform(data_dir="data",year=2026):
         roster_id=first(row,["gsis_id","player_id"])
         id_choices=contracts_by_id.get(norm_id(roster_id),[]) if roster_id else []
         name_choices=contracts.get(norm(name),[])
-        # Prefer the player ID, but use a normalized-name fallback when source IDs
-        # are absent/inconsistent. Only retain deals active in this season/team.
+        # The source's team field is often a nickname ("Patriots", "Texans")
+        # or a slash-separated list, not a 2–3 letter team code.
         active_id=[c for c in id_choices if active_contract_for_season(c,year)]
         active_name=[c for c in name_choices if active_contract_for_season(c,year)]
-        candidates=active_id or active_name
-        team_candidates=[c for c in candidates
-                         if canonical_team(first(c,["team","team_abbr","team_code"]))==team]
-        if not team_candidates and active_name:
-            team_candidates=[c for c in active_name
-                             if canonical_team(first(c,["team","team_abbr","team_code"]))==team]
-        if not team_candidates:
-            unassigned=[c for c in candidates if not first(c,["team","team_abbr","team_code"])]
-            if len(unassigned)==1: team_candidates=unassigned
-        contract=max(team_candidates,key=lambda c:(
+        id_team=[c for c in active_id if contract_matches_team(c,team)]
+        name_team=[c for c in active_name if contract_matches_team(c,team)]
+        candidates=id_team or name_team
+        # A unique ID match is still usable if OTC's team label is missing or
+        # not recognized; reject it when it explicitly resolves to another club.
+        if not candidates and len(active_id)==1:
+            raw_team=first(active_id[0],["team","team_abbr","team_code"])
+            mapped=contract_team_codes(raw_team) if raw_team else set()
+            if not mapped or not (mapped & set(CURRENT_TEAMS)):
+                candidates=active_id
+        # Name fallback is deliberately stricter: only a unique active row
+        # with a blank/unrecognized team label can be used without a team match.
+        if not candidates and len(active_name)==1:
+            raw_team=first(active_name[0],["team","team_abbr","team_code"])
+            mapped=contract_team_codes(raw_team) if raw_team else set()
+            if not mapped or not (mapped & set(CURRENT_TEAMS)):
+                candidates=active_name
+        contract=max(candidates,key=lambda c:(
             number(first(c,["year_signed","signing_year"])) or 0,
             number(first(c,["years","contract_years","length"])) or 0
-        )) if team_candidates else None
-        signed=number(contract.get("year_signed")) if contract else None
-        years=number(contract.get("years")) if contract else None
+        )) if candidates else None
+        signed=number(first(contract,["year_signed","signing_year"])) if contract else None
+        years=number(first(contract,["years","contract_years","length"])) if contract else None
         valid_dates=(signed is not None and years is not None and 1990<=signed<=year and 1<=years<=15)
         end_year=int(signed+years-1) if valid_dates else None
         left=max(0,int(end_year-year+1)) if end_year is not None else None
@@ -176,11 +236,14 @@ def build_platform(data_dir="data",year=2026):
      "teams":result,"league_cap_history_millions":CAP_LIMITS,"coverage":{"roster_rows":len(roster_rows),"latest_roster_rows":len(latest),"contracts_rows":len(contract_rows),
       "injury_rows":len(injury_rows),"depth_chart_rows":len(depth_rows),"franchises":len(result),"teams_with_rosters":sum(bool(v["roster"]) for v in result.values()),"teams_missing_rosters":[k for k,v in result.items() if not v["roster"]],
       "teams_below_20_players":[k for k,v in result.items() if len(v["roster"])<20],
+      "teams_with_contracts":[k for k,v in result.items() if any(p["contract"] for p in v["roster"])],
+      "contracts_matched":sum(1 for v in result.values() for p in v["roster"] if p["contract"]),
       "team_roster_weeks":team_roster_weeks},
      "sources":{"roster":"nflverse weekly rosters","contracts":"OverTheCap historical contracts via nflverse",
       "injuries":"nflverse injury reports where available","depth_chart":"nflverse depth charts","team_metadata":"nflverse team metadata"}}
     root.mkdir(parents=True,exist_ok=True)
     (root/"team-platform.json").write_text(json.dumps(payload,separators=(",",":"),ensure_ascii=False),encoding="utf-8")
-    print(f"Built team platform: {len(result)} teams; {len(latest)} roster rows; {len(contract_rows)} contracts; {len(injury_rows)} injury rows.")
+    matched=sum(1 for v in result.values() for p in v["roster"] if p["contract"])
+    print(f"Built team platform: {len(result)} teams; {len(latest)} latest-week roster rows; {len(contract_rows)} contract records; {matched} roster contracts matched; {len(injury_rows)} injury rows.")
     return payload
 if __name__=="__main__": build_platform("data",int(os.environ.get("NFL_SEASON","2026")))

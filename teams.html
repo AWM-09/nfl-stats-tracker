@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09111a"><link rel="icon" type="image/svg+xml" href="./favicon.svg?v=1"><title>NFL Team Platform | AlexMyrusTalksSports</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09111a"><meta name="nfl-stats-build" content="development"><link rel="icon" type="image/svg+xml" href="./favicon.svg?v=1"><title>NFL Team Platform | AlexMyrusTalksSports</title>
 <style>
 :root{color-scheme:dark;--bg:#09111a;--panel:#111e2b;--line:#2a4052;--text:#eef5fa;--muted:#9db0bf;--accent:#71d6b3;--gold:#f1c46b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#17374a 0,transparent 42%),var(--bg);color:var(--text);font:14px/1.55 Inter,system-ui,sans-serif}main{max-width:1450px;margin:auto;padding:22px 16px 48px}a{color:var(--accent)}h1,h2,h3,p{margin-top:0}.top,.actions,.panel-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.top,.panel-head{justify-content:space-between}.eyebrow{font-size:11px;letter-spacing:.15em;color:var(--accent);font-weight:850;text-transform:uppercase}.title{font-size:clamp(30px,4vw,46px);margin:5px 0;font-weight:950;letter-spacing:-.04em}.subtitle,.muted,.note{color:var(--muted)}.subtitle{max-width:900px}.actions a,button,select{font:inherit;color:var(--text);background:#0b1722;border:1px solid var(--line);border-radius:9px;padding:9px 11px;text-decoration:none}.actions a{color:var(--muted)}button{cursor:pointer;font-weight:750}button.primary{background:var(--accent);color:#092016;border-color:var(--accent)}button:disabled{opacity:.5;cursor:wait}select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}.panel,.card{background:linear-gradient(155deg,rgba(23,40,56,.98),rgba(14,26,38,.98));border:1px solid var(--line);border-radius:15px;padding:16px;margin:12px 0;min-width:0}.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.field{display:flex;flex-direction:column;gap:5px;min-width:0}.field label,.label{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.08em;text-transform:uppercase}.status,.notice{padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#10202c;color:var(--muted);margin:12px 0}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.value{font-size:clamp(22px,3vw,30px);font-weight:900;margin:5px 0}.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{border-collapse:collapse;width:100%;min-width:620px}th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #263949;white-space:nowrap}th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#0d1924;position:sticky;top:0}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}tbody tr:hover{background:#1a2c3a}tbody tr:last-child td{border-bottom:0}.chart{display:flex;align-items:end;gap:5px;min-height:190px;padding:12px 4px 0;border-bottom:1px solid var(--line);overflow-x:auto}.barcol{min-width:24px;flex:1;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:5px;height:170px}.bar{width:min(100%,30px);background:linear-gradient(180deg,var(--accent),#287c70);border-radius:5px 5px 0 0;min-height:2px}.barlabel{font-size:10px;color:var(--muted);white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg)}.barvalue{font-size:10px;color:var(--text)}.empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}.team-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.team-chip{border:1px solid var(--line);border-radius:10px;padding:10px;background:#0c1924;cursor:pointer;text-align:left}.team-chip.active{border-color:var(--accent);background:#15332f}.team-chip strong{display:block}.team-chip span{font-size:11px;color:var(--muted)}.foot{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;margin-top:24px}
@@ -131,7 +131,12 @@ function moneyMillions(v){return v===null||v===undefined||!Number.isFinite(Numbe
 function dossierTeamCodes(code){return FRANCHISE_CODES[code]||[code]}
 async function loadDossierData(){
  try{
-  const pair=await Promise.all([fetch('./data/team-platform.json',{cache:'force-cache'}),fetch('./data/schedule.csv',{cache:'force-cache'})]);
+  const buildTag=document.querySelector('meta[name="nfl-stats-build"]')?.content||'team-platform-v2';
+  const version='?build='+encodeURIComponent(buildTag);
+  const pair=await Promise.all([
+   fetch('./data/team-platform.json'+version,{cache:'no-store'}),
+   fetch('./data/schedule.csv'+version,{cache:'no-store'})
+  ]);
   if(!pair[0].ok)throw Error('Team dossier data HTTP '+pair[0].status);
   if(!pair[1].ok)throw Error('Schedule data HTTP '+pair[1].status);
   teamPlatformData=await pair[0].json();teamScheduleRows=parseCSV(await pair[1].text());renderDossier();
@@ -181,9 +186,11 @@ function renderDossier(){
   ? '<div class="notice" role="alert"><b>Roster data missing.</b> No players were returned for this franchise. This is a data-feed issue, not an empty NFL roster.</div>'
   : roster.length<20
     ? '<div class="notice" role="alert"><b>Roster data incomplete.</b> Only '+roster.length+' entries were returned. Do not treat this as a complete roster.</div>'
-    : teamRosterWeek<Number(teamPlatformData.roster_week||0)
-      ? '<div class="dossier-note">This team is showing its latest available roster snapshot (Week '+teamRosterWeek+'), which is older than the league-wide latest week. The roster is not being silently blanked.</div>'
-      : '';
+    : !teamRosterWeek
+      ? '<div class="notice" role="alert"><b>Roster snapshot metadata missing.</b> The roster file did not provide a valid week number. Refresh the page after the latest data build; do not interpret this as Week 0.</div>'
+      : teamRosterWeek<Number(teamPlatformData.roster_week||0)
+        ? '<div class="dossier-note">This team is showing its latest available roster snapshot (Week '+teamRosterWeek+'), which is older than the league-wide latest week.</div>'
+        : '';
  $('dossierTabs').querySelectorAll('[data-dossier]').forEach(button=>{button.classList.toggle('active',button.dataset.dossier===dossierTab);button.onclick=()=>{dossierTab=button.dataset.dossier;renderDossier()}});
  const positionOptions=[...new Set(roster.map(p=>String(p.position||'').trim()).filter(Boolean))].sort();
  const filteredRoster=rosterPositionFilter==='ALL'?roster:roster.filter(p=>String(p.position||'').trim()===rosterPositionFilter);

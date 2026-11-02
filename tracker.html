@@ -153,24 +153,14 @@ select option:checked {
 <canvas id="factCardCanvas" width="1080" height="1350" hidden></canvas>
 </div></section><section class="panel hidden" id="draftPanel"><div class="panel-head"><h2>2027 NFL Draft Order · As It Stands</h2><span class="tag">PROVISIONAL ORDER</span></div><div class="field" style="max-width:220px;margin-bottom:12px"><label for="draftYear">Season being played</label><select id="draftYear"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option></select></div><div class="notice" id="draftNotice">Provisional draft order based on the selected season's current records. Official order changes with playoff results, strength of schedule, and trades.</div><div id="draftContent"></div></section>
 <section class="panel hidden" id="recordsPanel">
-<div class="panel-head"><h2>NFL Records Explorer</h2><span class="tag">VERIFIED REFERENCE + RESEARCH</span></div>
+<div class="panel-head"><h2>NFL Records Explorer</h2><span class="tag">OFFICIAL RECORD REFERENCE</span></div>
 <section class="panel" style="margin-top:12px">
-<div class="panel-head"><h3>Independently checked NFL records</h3><span class="tag">OFFICIAL NFL RECORD BOOK</span></div>
-<p class="muted">These entries are transcribed from the official NFL Record &amp; Fact Book, not calculated from nflverse. The reference is limited to the edition and categories shown; it is not a complete live record book.</p>
+<div class="panel-head"><h3>Verified NFL records</h3><span class="tag">NFL RECORD &amp; FACT BOOK</span></div>
+<p class="muted">This page shows only entries checked against the cited NFL Record &amp; Fact Book. Dataset-derived player-week rankings are deliberately not shown here as records. The reference is limited to the edition and categories listed; check the linked source for the complete current record book.</p>
 <div class="field" style="max-width:320px"><label for="officialRecordsCategory">Record category</label><select id="officialRecordsCategory"></select></div>
 <div class="notice" id="officialRecordsSource">Loading the official-record reference…</div>
 <div id="officialRecordsResults"></div>
 </section>
-<div class="panel-head" style="margin-top:20px"><h3>Dataset-derived historical rankings</h3><span class="tag">RESEARCH DATA · 2000–2026</span></div>
-<p class="muted">This section ranks the weekly player-stat dataset used by the dashboard. It is useful for research, but it is not the official NFL record book and must not be treated as a verified all-time ranking. nflverse data can contain errors or incomplete historical coverage; missing values are excluded, not treated as zero.</p>
-<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
-<div class="field"><label for="recordsMetric">Statistic</label><select id="recordsMetric"></select></div>
-<div class="field"><label for="recordsMode">Record type</label><select id="recordsMode"><option value="weekly">Weekly record (single week)</option><option value="season">Single-season record</option><option value="career">Career record</option></select></div>
-<div class="field"><label for="recordsPhase">Season phase</label><select id="recordsPhase"><option value="ALL">Regular season + playoffs</option><option value="REG">Regular season only</option><option value="POST">Playoffs only</option></select></div>
-<div class="field"><label for="recordsLimit">Show top</label><select id="recordsLimit"><option value="10">10 records</option><option value="25" selected>25 records</option><option value="50">50 records</option></select></div>
-</div>
-<div class="notice" id="recordsStatus">Records are loaded when you open this tab. The first load scans the historical player-week files.</div>
-<div id="recordsResults"></div>
 </section>
 <section class="panel hidden" id="calendarPanel">
 <div class="panel-head"><h2>NFL Schedule & Scores</h2><span class="tag">SCHEDULE</span></div>
@@ -1215,10 +1205,6 @@ async function buildRecordsIndex(){
  return {index,loaded:loaded.length,loadedYears:loaded,skipped,players};
 }
 function setupRecordsControls(){
- const metric=$('recordsMetric');
- metric.innerHTML=Object.entries(metrics).sort((a,b)=>a[1].label.localeCompare(b[1].label)).map(entry=>'<option value="'+esc(entry[0])+'">'+esc(entry[1].label)+'</option>').join('');
- metric.value='passing_yards';
- ['recordsMetric','recordsMode','recordsPhase','recordsLimit'].forEach(id=>$(id).addEventListener('change',renderRecords));
  $('officialRecordsCategory').addEventListener('change',renderOfficialRecords);
  loadOfficialRecords();
 }
@@ -1239,7 +1225,7 @@ async function loadOfficialRecords(){
   renderOfficialRecords();
  }catch(error){
   source.textContent='Could not load the independently checked record reference: '+error.message;
-  results.innerHTML='<div class="notice">The official record reference is unavailable. The dataset-derived rankings below are not a substitute.</div>';
+  results.innerHTML='<div class="notice">The official record reference is unavailable. No unverified record rankings are displayed.</div>';
  }
 }
 function renderOfficialRecords(){
@@ -1257,50 +1243,8 @@ function renderOfficialRecords(){
   '</tbody></table></div>'
  ).join('')||'<div class="empty">No verified entries are available for this category.</div>';
 }
-async function loadPrecomputedRecordsIndex(){
- const buildTag=document.querySelector('meta[name="nfl-stats-build"]')?.content||'records-v1';
- const response=await fetch('./data/records-index.json?build='+encodeURIComponent(buildTag),{cache:'force-cache'});
- if(!response.ok)throw new Error('HTTP '+response.status+' loading the precomputed index');
- const payload=await response.json();
- if(payload.version!==1||!payload.index)throw new Error('Invalid or outdated precomputed records index');
- recordsIndex=payload.index;
- recordsCoverageYears=Number(payload.loaded)||0;
- recordsSkippedYears=Array.isArray(payload.skipped)?payload.skipped:[];
-}
 async function renderRecords(){
- const renderId=++recordsRenderSequence;
- const status=$('recordsStatus'),results=$('recordsResults');
- status.textContent=recordsIndex?'Updating records view…':'Loading precomputed records…';
- if(!recordsIndex){
-  if(!recordsBuildPromise){
-   recordsBuildPromise=loadPrecomputedRecordsIndex().catch(error=>{
-    recordsBuildPromise=null;
-    throw error;
-   });
-  }
-  try{await recordsBuildPromise}catch(error){
-   if(renderId!==recordsRenderSequence)return;
-   status.textContent='Could not load records: '+error.message;
-   results.innerHTML='<div class="notice">The precomputed records index could not be loaded. Try reloading the page; if the problem persists, the site build may need to be rerun.</div>';
-   return;
-  }
- }
- if(renderId!==recordsRenderSequence)return;
- const stat=$('recordsMetric').value,mode=$('recordsMode').value,phase=$('recordsPhase').value,limit=+$('recordsLimit').value||25;
- const modeLabels={weekly:'Weekly record',season:'Single-season record',career:'Career record'};
- const list=((recordsIndex[mode]||{})[phase]||{})[stat]||[];
- const extra=recordsSkippedYears.length?(' Missing seasons: '+recordsSkippedYears.join(', ')+'.'):'';
- status.textContent='Scanned '+recordsCoverageYears+' of '+YEARS.length+' seasons. Showing the highest '+Math.min(limit,list.length)+' available records.'+extra;
- const heading='Most '+metrics[stat].label.toLowerCase()+' · '+modeLabels[mode];
- if(!list.length){
-  results.innerHTML='<div class="notice">No tracked values were found for this statistic and season phase. Try another statistic or phase.</div>';
-  return;
- }
- const tableRows=list.slice(0,limit).map((entry,index)=>{
-  const coverage=mode==='weekly'?'1 week':mode==='season'?entry.weeks+' weeks':entry.seasons+' seasons · '+entry.weeks+' weeks';
-  return '<tr><td class="rank">'+(index+1)+'</td><td><b>'+esc(entry.player)+'</b></td><td>'+esc(entry.team)+'</td><td><b>'+esc(fmt(entry.value,stat))+'</b></td><td>'+esc(entry.scope)+'</td><td>'+esc(coverage)+'</td></tr>';
- }).join('');
- results.innerHTML='<div class="panel-head" style="margin-top:14px"><h3>'+esc(heading)+'</h3><span class="tag">'+esc(recordPhaseLabel(phase))+'</span></div><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team(s)</th><th>'+esc(metrics[stat].label)+'</th><th>Record scope</th><th>Coverage</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>';
+ await loadOfficialRecords();
 }
 
 function init(){ setupStatAdders(); setupRecordsControls(); populateSeasonDropdown('year',2026);$('calendarTimezone').value=localStorage.getItem('nflCalendarTimezone')||'Europe/London';
