@@ -1093,7 +1093,7 @@ function addPlayerProfileSeason(profiles,playerKey,rows,year){
  const firstRow=rows[0];
  let profile=profiles.get(playerKey);
  if(!profile){
-  profile={key:playerKey,id:String(first(firstRow,['player_id','gsis_id'])||''),name:firstRow.player||'Unknown player',position:firstRow.position||'—',seasons:[]};
+  profile={key:playerKey,id:String(first(firstRow,['player_id','gsis_id'])||''),name:firstRow.player||'Unknown player',position:firstRow.position||'—',headshot:'',seasons:[]};
   profiles.set(playerKey,profile);
  }
  const teams=[...new Set(rows.map(row=>teamName(row.team)).filter(Boolean))].sort();
@@ -1106,6 +1106,8 @@ function addPlayerProfileSeason(profiles,playerKey,rows,year){
  profile.id=String(first(firstRow,['player_id','gsis_id'])||profile.id);
  profile.name=firstRow.player||profile.name;
  profile.position=firstRow.position||profile.position;
+ const headshot=first(firstRow,['headshot_url','headshot']);
+ if(headshot&&/^https:\/\//i.test(String(headshot)))profile.headshot=String(headshot).trim();
  profile.seasons.push({season:year,teams,position:profile.position,games:games.size,stats});
 }
 async function buildRecordsIndex(){
