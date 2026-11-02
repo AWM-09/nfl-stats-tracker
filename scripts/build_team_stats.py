@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build weekly team metrics from nflverse play-by-play CSV files."""
 import csv, math
+from team_stats_helpers import is_fourth_down_attempt
 from collections import defaultdict
 from pathlib import Path
 ROOT=Path("data")
@@ -47,7 +48,7 @@ for year in YEARS:
    if str(r.get("down") or "")=="3":
     d["third_att"]+=1
     if yes(r.get("first_down")) or yes(r.get("touchdown")):d["third_conv"]+=1
-   if str(r.get("down") or "")=="4":
+   if str(r.get("down") or "")=="4" and is_fourth_down_attempt(pt):
     d["fourth_att"]+=1
     if yes(r.get("first_down")) or yes(r.get("touchdown")):d["fourth_conv"]+=1
    is_turnover = yes(r.get("interception")) or yes(r.get("fumble_lost"))
