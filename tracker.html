@@ -1208,7 +1208,7 @@ function setupRecordsControls(){
  $('officialRecordsCategory').addEventListener('change',renderOfficialRecords);
  loadOfficialRecords();
 }
-let officialRecordsPayload=null;
+let officialRecordsPayload=null,recordsIndexPayload=null;
 async function loadOfficialRecords(){
  const select=$('officialRecordsCategory'),source=$('officialRecordsSource'),results=$('officialRecordsResults');
  try{
@@ -1216,6 +1216,11 @@ async function loadOfficialRecords(){
    const response=await fetch('./data/official-records.json',{cache:'no-store'});
    if(!response.ok)throw new Error('HTTP '+response.status);
    officialRecordsPayload=await response.json();
+  }
+  if(!recordsIndexPayload){
+   const response=await fetch('./data/records-index.json',{cache:'no-store'});
+   if(!response.ok)throw new Error('Historical records index HTTP '+response.status);
+   recordsIndexPayload=await response.json();
   }
   const current=select.value||'passing_yards';
   // Expose every stat the analytics platform tracks (currently 78), rather
@@ -1232,31 +1237,26 @@ async function loadOfficialRecords(){
  }
 }
 function renderOfficialRecords(){
- if(!officialRecordsPayload)return;
+ if(!officialRecordsPayload||!recordsIndexPayload)return;
  const metricKey=$('officialRecordsCategory').value;
  const metricMeta=metrics[metricKey];
- const metricToOfficialCategory={
-  passing_yards:'Passing yards',
-  passing_tds:'Passing touchdowns',
-  rushing_yards:'Rushing yards',
-  receiving_yards:'Receiving yards'
- };
- const category=metricToOfficialCategory[metricKey]||'';
- const entries=category?officialRecordsPayload.records.filter(r=>r.category===category):[];
- if(!entries.length){
-  $('officialRecordsResults').innerHTML='<div class="notice"><b>'+esc(metricMeta?.label||metricKey)+'</b> is tracked by this platform, but the cited NFL Record &amp; Fact Book does not publish a standardized all-time leaderboard for this statistic. No unverified dataset-derived figures are substituted.</div>';
-  return;
- }
- const groups=new Map();
- entries.forEach(entry=>{
-  if(!groups.has(entry.record_type))groups.set(entry.record_type,[]);
-  groups.get(entry.record_type).push(entry);
- });
- $('officialRecordsResults').innerHTML=[...groups.entries()].map(([type,rows])=>
-  '<h4 style="margin:14px 0 7px">'+esc(type)+'</h4><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Value</th><th>Season / years</th></tr></thead><tbody>'+
-  rows.sort((a,b)=>a.rank-b.rank).map(r=>'<tr><td>'+r.rank+'</td><td><b>'+esc(r.holder)+'</b></td><td>'+esc(r.team||'—')+'</td><td><b>'+Number(r.value).toLocaleString('en-US')+' '+esc(r.unit||'')+'</b></td><td>'+esc(r.season_or_years||'—')+'</td></tr>').join('')+
-  '</tbody></table></div>'
- ).join('')||'<div class="empty">No verified entries are available for this category.</div>';
+ const officialEntries=(officialRecordsPayload.records||[]).filter(r=>r.metric===metricKey);
+ const modes=[['career','Career'],['season','Single season'],['weekly','Single game']];
+ const phase='REG';
+ const datasetGroups=modes.map(([mode,label])=>{
+  const rows=recordsIndexPayload.index&&recordsIndexPayload.index[mode]&&recordsIndexPayload.index[mode][phase]&&recordsIndexPayload.index[mode][phase][metricKey]||[];
+  return {label:label,rows:rows.slice(0,10)};
+ }).filter(group=>group.rows.length);
+ const officialHtml=officialEntries.length?'<h4 style="margin:14px 0 7px">Verified NFL all-time reference</h4><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Value</th><th>Season / years</th></tr></thead><tbody>'+
+  officialEntries.sort((a,b)=>a.rank-b.rank).map(r=>'<tr><td>'+r.rank+'</td><td><b>'+esc(r.holder)+'</b></td><td>'+esc(r.team||'—')+'</td><td><b>'+Number(r.value).toLocaleString('en-US')+' '+esc(r.unit||'')+'</b></td><td>'+esc(r.season_or_years||'—')+'</td></tr>').join('')+
+  '</tbody></table></div>':'';
+ const datasetHtml=datasetGroups.map(group=>'<h4 style="margin:18px 0 7px">'+esc(group.label)+' · top 10</h4><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Value</th><th>Season / game</th></tr></thead><tbody>'+
+  group.rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(r.player||'—')+'</b></td><td>'+esc(r.team||'—')+'</td><td><b>'+fmt(r.value,metricKey)+'</b></td><td>'+esc(r.scope||'—')+'</td></tr>').join('')+
+  '</tbody></table></div>').join('');
+ const loaded=recordsIndexPayload.loaded_years||[];
+ const coverage=loaded.length?Math.min(...loaded)+'–'+Math.max(...loaded):'unknown';
+ const status='<div class="notice">Historical rankings use player statistics for '+esc(coverage)+' ('+loaded.length+' seasons loaded), regular season only. These are top-10 rankings within the available dataset, not automatically all-time NFL records. The official NFL reference is displayed separately wherever available.</div>';
+ $('officialRecordsResults').innerHTML=status+officialHtml+(datasetHtml||'<div class="notice">No usable historical rows were found for this statistic. This is a source-coverage gap, not a zero-record result.</div>');
 }
 async function renderRecords(){
  await loadOfficialRecords();
