@@ -8,6 +8,8 @@ assert.ok(html.includes("Verified NFL records"), 'Official records section shoul
 assert.ok(html.includes("Dataset-derived player-week rankings are deliberately not shown here"), 'Unverified weekly-data rankings must not be displayed as records.');
 assert.ok(!html.includes('id="recordsMetric"'), 'The unverified dataset-derived leaderboard controls must be removed from Records.');
 assert.ok(!html.includes("Dataset-derived historical rankings"), 'The unverified dataset-derived table must not be shown.');
+assert.ok(html.includes("Object.entries(metrics).map(([key,meta])"), 'The official-record selector must expose every tracked statistic.');
+assert.ok(html.includes("does not publish a standardized all-time leaderboard"), 'Unsupported official record categories must explain that no verified reference is available.');
 const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
  .find(item => item[1].includes('function recordAggregateValue') && item[1].includes('function metricValue'));
 assert.ok(match, 'Could not extract main dashboard script.');

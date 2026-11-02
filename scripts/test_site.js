@@ -54,6 +54,7 @@ for (const target of ['tracker.html','player.html','teams.html','advanced.html',
 const tracker = fs.readFileSync(path.join(site, 'tracker.html'), 'utf8');
 assert.ok(tracker.includes('./data/official-records.json'), 'Records must load the official NFL record reference.');
 assert.ok(!tracker.includes('Dataset-derived historical rankings'), 'The public Records page must not display unverified player-week rankings.');
+assert.ok(tracker.includes("Object.entries(metrics).map(([key,meta])"), 'Every tracked metric must be selectable in the official Records view.');
 assert.ok(tracker.includes('data-view="records"'), 'Main tracker is missing its Records view.');
 
 const player = fs.readFileSync(path.join(site, 'player.html'), 'utf8');

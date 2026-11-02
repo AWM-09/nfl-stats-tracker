@@ -1,6 +1,6 @@
 import csv,gzip,tempfile,unittest
 from pathlib import Path
-from build_team_platform import build_platform
+from build_team_platform import build_platform, contract_team_codes, canonical_team, millions
 class TeamPlatformTests(unittest.TestCase):
  def write_csv(self,path,rows):
   path.parent.mkdir(parents=True,exist_ok=True)
@@ -47,6 +47,40 @@ class TeamPlatformTests(unittest.TestCase):
    self.assertEqual(hou["roster"][0]["contract"]["total_value"],100)
    self.assertEqual(hou["roster"][0]["contract"]["guaranteed"],60)
    self.assertEqual(data["coverage"]["teams_missing_rosters"].count("HOU"),0)
+ def test_real_over_the_cap_schema_matches_by_gsis_id_and_exact_team_name(self):
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d)
+   self.write_csv(root/"roster_weekly_2026.csv",[
+    {"season":"2026","week":"8","team":"CIN","full_name":"Example Quarterback","position":"QB","status":"ACT","gsis_id":"GSIS-PLAYER-A"},
+    {"season":"2026","week":"8","team":"NE","full_name":"Example Veteran","position":"WR","status":"ACT"},
+    {"season":"2026","week":"8","team":"NE","full_name":"Example Incomplete Date","position":"LB","status":"ACT","gsis_id":"GSIS-PLAYER-C"}])
+   with gzip.open(root/"historical_contracts.csv.gz","wt",newline="",encoding="utf-8") as f:
+    fields=["player","position","team","is_active","year_signed","years","value","apy","guaranteed","gsis_id"]
+    w=csv.DictWriter(f,fieldnames=fields);w.writeheader()
+    w.writerow({"player":"Example Quarterback","position":"QB","team":"Bengals","is_active":"TRUE","year_signed":"2023","years":"5","value":"275","apy":"55","guaranteed":"146.5","gsis_id":"GSIS-PLAYER-A"})
+    w.writerow({"player":"Example Veteran","position":"WR","team":"Patriots","is_active":"TRUE","year_signed":"2024","years":"4","value":"80","apy":"20","guaranteed":"40","gsis_id":"GSIS-PLAYER-B"})
+    w.writerow({"player":"Example Incomplete Date","position":"LB","team":"NE","is_active":"TRUE","year_signed":"","years":"","value":"12","apy":"6","guaranteed":"8","gsis_id":"GSIS-PLAYER-C"})
+   data=build_platform(root,2026)
+   cin=data["teams"]["CIN"]["roster"][0]["contract"]
+   ne={p["name"]:p["contract"] for p in data["teams"]["NE"]["roster"]}
+   self.assertEqual(cin["total_value"],275)
+   self.assertEqual(cin["apy"],55)
+   self.assertEqual(cin["years_left_estimate"],2)
+   self.assertEqual(cin["end_year_estimate"],2027)
+   self.assertEqual(ne["Example Veteran"]["apy"],20)
+   self.assertEqual(ne["Example Veteran"]["years_left_estimate"],2)
+   self.assertEqual(ne["Example Incomplete Date"]["apy"],6)
+   self.assertIsNone(ne["Example Incomplete Date"]["years_left_estimate"])
+   self.assertEqual(data["coverage"]["contracts_matched"],3)
+   self.assertEqual(data["coverage"]["contracts_matched_by_gsis_id"],2)
+   self.assertEqual(data["coverage"]["contracts_matched_by_name"],1)
+ def test_contract_team_labels_resolve_over_the_cap_nicknames_and_history(self):
+  self.assertEqual(contract_team_codes("NYJ/GB"),{"NYJ","GB"})
+  self.assertEqual(contract_team_codes("Bengals"),{"CIN"})
+  self.assertEqual(contract_team_codes("Patriots"),{"NE"})
+  self.assertEqual(canonical_team("Buccaneers"),"TB")
+  self.assertEqual(millions("275"),275)
+  self.assertEqual(millions("275000000"),275)
  def test_optional_feeds_do_not_fabricate_data(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);self.write_csv(root/"roster_weekly_2026.csv",[{"season":"2026","week":"1","team":"BUF","full_name":"Test Player","position":"RB","status":"ACT"}])

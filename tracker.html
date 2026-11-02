@@ -1217,10 +1217,13 @@ async function loadOfficialRecords(){
    if(!response.ok)throw new Error('HTTP '+response.status);
    officialRecordsPayload=await response.json();
   }
-  const categories=[...new Set(officialRecordsPayload.records.map(r=>r.category))];
-  const current=select.value;
-  select.innerHTML=categories.map(category=>'<option value="'+esc(category)+'">'+esc(category)+'</option>').join('');
-  if(categories.includes(current))select.value=current;
+  const current=select.value||'passing_yards';
+  // Expose every stat the analytics platform tracks (currently 78), rather
+  // than limiting the selector to the four sections with hand-verified rows.
+  select.innerHTML=Object.entries(metrics).map(([key,meta])=>
+   '<option value="'+esc(key)+'">'+esc(meta.label)+'</option>'
+  ).join('');
+  select.value=metrics[current]?current:'passing_yards';
   source.innerHTML='Source: <a href="'+esc(officialRecordsPayload.source_url)+'" target="_blank" rel="noopener noreferrer">'+esc(officialRecordsPayload.source_edition)+'</a> · Statistics in that edition current through '+esc(officialRecordsPayload.statistics_current_through)+'. '+esc(officialRecordsPayload.method_note||'');
   renderOfficialRecords();
  }catch(error){
@@ -1230,8 +1233,20 @@ async function loadOfficialRecords(){
 }
 function renderOfficialRecords(){
  if(!officialRecordsPayload)return;
- const category=$('officialRecordsCategory').value;
- const entries=officialRecordsPayload.records.filter(r=>r.category===category);
+ const metricKey=$('officialRecordsCategory').value;
+ const metricMeta=metrics[metricKey];
+ const metricToOfficialCategory={
+  passing_yards:'Passing yards',
+  passing_tds:'Passing touchdowns',
+  rushing_yards:'Rushing yards',
+  receiving_yards:'Receiving yards'
+ };
+ const category=metricToOfficialCategory[metricKey]||'';
+ const entries=category?officialRecordsPayload.records.filter(r=>r.category===category):[];
+ if(!entries.length){
+  $('officialRecordsResults').innerHTML='<div class="notice"><b>'+esc(metricMeta?.label||metricKey)+'</b> is tracked by this platform, but the cited NFL Record &amp; Fact Book does not publish a standardized all-time leaderboard for this statistic. No unverified dataset-derived figures are substituted.</div>';
+  return;
+ }
  const groups=new Map();
  entries.forEach(entry=>{
   if(!groups.has(entry.record_type))groups.set(entry.record_type,[]);

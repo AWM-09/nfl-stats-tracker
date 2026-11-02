@@ -50,7 +50,15 @@ TEAM_NAME_ALIASES={
 "TAMPA BAY":"TB","TAMPA BAY BUCCANEERS":"TB","BUCCANEERS":"TB","BUCS":"TB",
 "TENNESSEE":"TEN","TENNESSEE TITANS":"TEN","TITANS":"TEN",
 "WASHINGTON":"WAS","WASHINGTON COMMANDERS":"WAS","COMMANDERS":"WAS",
-"WASHINGTON FOOTBALL TEAM":"WAS","WASHINGTON REDSKINS":"WAS"
+"WASHINGTON FOOTBALL TEAM":"WAS","WASHINGTON REDSKINS":"WAS",
+"BILLS":"BUF","DOLPHINS":"MIA","PATS":"NE","PATRIOTS":"NE","JETS":"NYJ",
+"RAVENS":"BAL","BENGALS":"CIN","BROWNS":"CLE","STEELERS":"PIT",
+"TEXANS":"HOU","COLTS":"IND","JAGS":"JAX","JAGUARS":"JAX","TITANS":"TEN",
+"BRONCOS":"DEN","CHIEFS":"KC","RAIDERS":"LV","CHARGERS":"LAC",
+"COWBOYS":"DAL","GIANTS":"NYG","EAGLES":"PHI","COMMANDERS":"WAS",
+"BEARS":"CHI","LIONS":"DET","PACKERS":"GB","VIKINGS":"MIN",
+"FALCONS":"ATL","PANTHERS":"CAR","SAINTS":"NO","BUCS":"TB","BUCCANEERS":"TB",
+"CARDINALS":"ARI","RAMS":"LAR","49ERS":"SF","NINERS":"SF","SEAHAWKS":"SEA"
 }
 def canonical_team(value):
     raw=str(value or "").strip()
@@ -62,8 +70,10 @@ def canonical_team(value):
         if re.sub(r"[^A-Z0-9]","",alias)==normalized: return target
     return code
 def contract_team_codes(value):
-    parts=re.split(r"\\s*/\\s*|\\s*,\\s*|\\s+OR\\s+",str(value or "").upper())
-    return {canonical_team(part) for part in parts if part.strip()}
+    # OTC can report abbreviations ("NYJ/GB") or team nicknames ("Bengals").
+    parts=re.split(r"\s*(?:/|,|&|;|\band\b|\bor\b)\s*",str(value or ""),flags=re.I)
+    return {code for part in parts if part.strip()
+            for code in [canonical_team(part)] if code in CURRENT_TEAMS}
 def contract_matches_team(row,team):
     raw=first(row,["team","team_abbr","team_code"])
     if not raw: return False
@@ -93,10 +103,13 @@ def truth(value): return str(value or "").strip().lower() in ("true","1","yes","
 def norm_id(value):
     return re.sub(r"[^a-z0-9]", "", str(value or "").strip().lower())
 def active_contract_for_season(row, season):
+    # nflreadr documents is_active as OverTheCap's current active-contract flag.
+    # Trust an explicit flag; only fall back to dates when the flag is absent.
     flag=first(row,["is_active","active","currently_active"]).strip().lower()
     if flag in ("false","0","no","n","inactive"): return False
+    if flag in ("true","1","yes","y","active"): return True
     signed=number(first(row,["year_signed","signing_year"]))
-    years=number(first(row,["years","contract_years","length"]))
+    years=number(first(row,["years","contract_years","length","yrs"]))
     if signed is None or years is None or not (1990<=signed<=season and 1<=years<=15): return False
     return int(signed+years-1)>=season
 def read_rows(path):
@@ -153,6 +166,8 @@ def build_platform(data_dir="data",year=2026):
              "color":first(row,["team_color","team_color_primary"]),"color2":first(row,["team_color2","team_color_secondary"]),
              "logo":first(row,["team_logo_espn","team_logo_wikipedia","team_logo"])}
     grouped=defaultdict(list)
+    matched_by_gsis_id=0
+    matched_by_name=0
     for row in latest:
         team=canonical_team(first(row,["team","team_abbr","recent_team"]))
         name=first(row,["full_name","player_name","player_display_name","name"])
@@ -160,39 +175,40 @@ def build_platform(data_dir="data",year=2026):
         roster_id=first(row,["gsis_id","player_id"])
         id_choices=contracts_by_id.get(norm_id(roster_id),[]) if roster_id else []
         name_choices=contracts.get(norm(name),[])
-        # The source's team field is often a nickname ("Patriots", "Texans")
-        # or a slash-separated list, not a 2–3 letter team code.
+        # GSIS ID is the source-documented primary join key. Do not reject a
+        # unique ID match because OTC still lists a historical team label.
         active_id=[c for c in id_choices if active_contract_for_season(c,year)]
         active_name=[c for c in name_choices if active_contract_for_season(c,year)]
-        id_team=[c for c in active_id if contract_matches_team(c,team)]
-        name_team=[c for c in active_name if contract_matches_team(c,team)]
-        candidates=id_team or name_team
-        # A unique ID match is still usable if OTC's team label is missing or
-        # not recognized; reject it when it explicitly resolves to another club.
-        if not candidates and len(active_id)==1:
-            raw_team=first(active_id[0],["team","team_abbr","team_code"])
-            mapped=contract_team_codes(raw_team) if raw_team else set()
-            if not mapped or not (mapped & set(CURRENT_TEAMS)):
-                candidates=active_id
-        # Name fallback is deliberately stricter: only a unique active row
-        # with a blank/unrecognized team label can be used without a team match.
-        if not candidates and len(active_name)==1:
-            raw_team=first(active_name[0],["team","team_abbr","team_code"])
-            mapped=contract_team_codes(raw_team) if raw_team else set()
-            if not mapped or not (mapped & set(CURRENT_TEAMS)):
-                candidates=active_name
-        contract=max(candidates,key=lambda c:(
+        contract=None
+        match_method=None
+        contract_sort=lambda c: (
             number(first(c,["year_signed","signing_year"])) or 0,
-            number(first(c,["years","contract_years","length"])) or 0
-        )) if candidates else None
+            number(first(c,["years","contract_years","length","yrs"])) or 0
+        )
+        if active_id:
+            # A player's current active contract is a single GSIS identity;
+            # where duplicate active entries exist, prefer the latest signed row.
+            contract=max(active_id,key=contract_sort)
+            match_method="gsis_id"
+        else:
+            name_team=[c for c in active_name if contract_matches_team(c,team)]
+            if name_team:
+                contract=max(name_team,key=contract_sort)
+                match_method="exact_name_and_team"
+            elif len(active_name)==1:
+                contract=active_name[0]
+                match_method="unique_exact_name"
+        if contract:
+            if match_method=="gsis_id": matched_by_gsis_id+=1
+            else: matched_by_name+=1
         signed=number(first(contract,["year_signed","signing_year"])) if contract else None
-        years=number(first(contract,["years","contract_years","length"])) if contract else None
+        years=number(first(contract,["years","contract_years","length","yrs"])) if contract else None
         valid_dates=(signed is not None and years is not None and 1990<=signed<=year and 1<=years<=15)
-        end_year=int(signed+years-1) if valid_dates else None
-        left=max(0,int(end_year-year+1)) if end_year is not None else None
-        if end_year is not None and end_year<year:
-            contract=None
-            signed=years=end_year=left=None
+        calculated_end=int(signed+years-1) if valid_dates else None
+        # Do not discard the contract's money fields if date estimates are absent
+        # or inconsistent with the source's explicit is_active flag.
+        end_year=calculated_end if calculated_end is not None and calculated_end>=year else None
+        left=int(end_year-year+1) if end_year is not None else None
         inj=sorted(injuries.get((team,norm(name)),[]),key=lambda x:first(x,["date_modified","report_date"]),reverse=True)
         depth=sorted(depths.get((team,norm(name)),[]),key=lambda x:(first(x,["dt","date_modified"]),-(number(x.get("pos_rank")) or 999)),reverse=True)
         injury=inj[0] if inj else None
@@ -238,12 +254,15 @@ def build_platform(data_dir="data",year=2026):
       "teams_below_20_players":[k for k,v in result.items() if len(v["roster"])<20],
       "teams_with_contracts":[k for k,v in result.items() if any(p["contract"] for p in v["roster"])],
       "contracts_matched":sum(1 for v in result.values() for p in v["roster"] if p["contract"]),
+      "contracts_matched_by_gsis_id":matched_by_gsis_id,
+      "contracts_matched_by_name":matched_by_name,
+      "contract_match_rate":round(sum(1 for v in result.values() for p in v["roster"] if p["contract"])/max(1,len(latest)),4),
       "team_roster_weeks":team_roster_weeks},
      "sources":{"roster":"nflverse weekly rosters","contracts":"OverTheCap historical contracts via nflverse",
       "injuries":"nflverse injury reports where available","depth_chart":"nflverse depth charts","team_metadata":"nflverse team metadata"}}
     root.mkdir(parents=True,exist_ok=True)
     (root/"team-platform.json").write_text(json.dumps(payload,separators=(",",":"),ensure_ascii=False),encoding="utf-8")
     matched=sum(1 for v in result.values() for p in v["roster"] if p["contract"])
-    print(f"Built team platform: {len(result)} teams; {len(latest)} latest-week roster rows; {len(contract_rows)} contract records; {matched} roster contracts matched; {len(injury_rows)} injury rows.")
+    print(f"Built team platform: {len(result)} teams; {len(latest)} latest-week roster rows; {len(contract_rows)} contract records; {matched} roster contracts matched ({matched_by_gsis_id} GSIS ID, {matched_by_name} name); {len(injury_rows)} injury rows.")
     return payload
 if __name__=="__main__": build_platform("data",int(os.environ.get("NFL_SEASON","2026")))
