@@ -160,14 +160,63 @@ function completedFranchiseSeasons(code){
  });
  return [...byYear.values()].map(r=>({...r,pct:(r.w+.5*r.t)/(r.games||1),diff:r.pf-r.pa})).sort((a,b)=>a.season-b.season);
 }
+const SUPER_BOWL_TITLES={
+ ARI:[],ATL:[],BAL:[2000,2012],BUF:[],CAR:[],CHI:[1985],CIN:[],CLE:[],
+ DAL:[1971,1977,1992,1993,1995],DEN:[1997,1998,2015],DET:[],
+ GB:[1966,1967,1996,2010],HOU:[],IND:[1970,2006],JAX:[],
+ KC:[1969,2019,2022,2023],LAC:[],LAR:[1999,2021],LV:[1976,1980,1983],
+ MIA:[1972,1973],MIN:[],NE:[2001,2003,2004,2014,2016,2018],NO:[2009],
+ NYG:[1986,1990,2007,2011],NYJ:[1968],PHI:[2017,2024],
+ PIT:[1974,1975,1978,1979,2005,2008],SEA:[2013],
+ SF:[1981,1984,1988,1989,1994],TB:[2002,2020],TEN:[],
+ WAS:[1982,1987,1991]
+};
+const TEAM_CONFERENCES={
+ ARI:'NFC',ATL:'NFC',BAL:'AFC',BUF:'AFC',CAR:'NFC',CHI:'NFC',CIN:'AFC',CLE:'AFC',
+ DAL:'NFC',DEN:'AFC',DET:'NFC',GB:'NFC',HOU:'AFC',IND:'AFC',JAX:'AFC',KC:'AFC',
+ LAC:'AFC',LAR:'NFC',LV:'AFC',MIA:'AFC',MIN:'NFC',NE:'AFC',NO:'NFC',NYG:'NFC',
+ NYJ:'AFC',PHI:'NFC',PIT:'AFC',SEA:'NFC',SF:'NFC',TB:'NFC',TEN:'AFC',WAS:'NFC'
+};
+function canonicalFranchiseCode(code){
+ const value=String(code||'').toUpperCase();
+ if(['LA','LAR','STL'].includes(value))return 'LAR';
+ if(['SD','LAC'].includes(value))return 'LAC';
+ if(['OAK','LV'].includes(value))return 'LV';
+ if(['WAS','WSH'].includes(value))return 'WAS';
+ if(['JAX','JAC'].includes(value))return 'JAX';
+ return value;
+}
 function franchiseTitles(code){
- if(!teamScheduleRows)return[];
- const codes=dossierTeamCodes(code),titles=[];
- teamScheduleRows.forEach(g=>{
-  const phase=String(g.game_type||g.season_type||'').toUpperCase(),home=String(g.home_team||'').toUpperCase(),away=String(g.away_team||'').toUpperCase(),hs=number(g.home_score),as=number(g.away_score);
-  if((phase==='SB'||phase==='SUPERBOWL')&&hs!==null&&as!==null&&codes.includes(hs>as?home:away))titles.push(number(g.season));
- });
- return [...new Set(titles)].filter(Boolean).sort((a,b)=>a-b);
+ return (SUPER_BOWL_TITLES[canonicalFranchiseCode(code)]||[]).slice();
+}
+function playoffFinishForSeason(code,season){
+ if(!teamScheduleRows)return Number(season)===2026?'Season in progress':'Not available';
+ const key=canonicalFranchiseCode(code),codes=dossierTeamCodes(key);
+ const games=teamScheduleRows.filter(g=>Number(g.season)===Number(season)&&
+  (codes.includes(String(g.home_team||'').toUpperCase())||codes.includes(String(g.away_team||'').toUpperCase())));
+ const stageRank={WC:1,DIV:2,CON:3,SB:4};
+ let deepest=0,finish='';
+ for(const game of games){
+  const phase=String(game.game_type||game.season_type||'').toUpperCase();
+  const rank=stageRank[phase]||0;
+  if(!rank)continue;
+  if(rank>deepest){
+   deepest=rank;
+   finish=rank===1?'Wild Card Round':rank===2?'Divisional Round':
+    rank===3?(TEAM_CONFERENCES[key]||'Conference')+' Championship':'Super Bowl appearance';
+  }
+  if(phase==='SB'){
+   const home=String(game.home_team||'').toUpperCase(),away=String(game.away_team||'').toUpperCase();
+   const hs=number(game.home_score),as=number(game.away_score);
+   if(hs!==null&&as!==null){
+    const winner=hs>as?home:as>hs?away:'';
+    if(winner&&codes.includes(winner))return 'Super Bowl champion';
+    if(winner)return 'Super Bowl runner-up';
+   }
+  }
+ }
+ if(deepest)return finish;
+ return Number(season)===2026?'Season in progress':'Missed playoffs';
 }
 function dossierTable(headers,rows){
  if(!rows.length)return '<div class="empty">No verified rows are available for this section.</div>';
@@ -215,11 +264,11 @@ function renderDossier(){
   const reserve=roster.filter(p=>['PUP','RES','IR','INA','RSN'].includes(p.status));
   $('dossierContent').innerHTML=rosterWarning+'<div class="dossier-note">Injury reports are shown only where the current source provides them. Reserve/PUP roster status is not a diagnosis and is listed separately.</div>'+dossierTable(['Player','Position','Reported injury','Game status','Practice status','Updated'],rows)+'<h3>Reserve / inactive roster designations</h3>'+dossierTable(['Player','Position','Roster status'],reserve.map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+esc(p.position||'—')+'</td><td>'+esc(p.status_label||p.status)+'</td></tr>'));
  }else if(dossierTab==='history'){
-  const titles=franchiseTitles(selectedTeam),timeline=FRANCHISE_TIMELINES[selectedTeam]||teamName(selectedTeam)+' franchise history; historical name and relocation coverage should be checked against official franchise records.';
-  $('dossierContent').innerHTML='<div class="dossier-note"><b>Franchise timeline:</b> '+esc(timeline)+'</div><div class="dossier-note"><b>Super Bowl titles identified in the schedule archive:</b> '+(titles.length?titles.join(', '):'No Super Bowl win identified in the loaded schedule rows')+'. This is Super Bowl history, not a count of pre-Super Bowl league championships.</div>'+dossierTable(['Season','Record','Games','Win %','Points for','Points against','Differential'],completedFranchiseSeasons(selectedTeam).slice().reverse().map(r=>'<tr><td>'+r.season+'</td><td>'+r.w+'-'+r.l+(r.t?'-'+r.t:'')+'</td><td>'+r.games+'</td><td>'+r.pct.toFixed(3)+'</td><td>'+r.pf+'</td><td>'+r.pa+'</td><td>'+(r.diff>0?'+':'')+r.diff+'</td></tr>'));
+  const titles=franchiseTitles(selectedTeam),timeline=FRANCHISE_TIMELINES[selectedTeam]||FRANCHISE_TIMELINES[canonicalFranchiseCode(selectedTeam)]||teamName(selectedTeam)+' franchise history; historical name and relocation coverage should be checked against official franchise records.';
+  $('dossierContent').innerHTML='<div class="dossier-note"><b>Franchise timeline:</b> '+esc(timeline)+'</div><div class="dossier-note"><b>All-time Super Bowl championships:</b> '+titles.length+(titles.length?' · Winning seasons: '+titles.join(', '):' · No Super Bowl championships')+'. Seasons are listed by NFL season, and relocated franchise history is combined.</div>'+dossierTable(['Season','Record','Games','Win %','Points for','Points against','Differential'],completedFranchiseSeasons(selectedTeam).slice().reverse().map(r=>'<tr><td>'+r.season+'</td><td>'+r.w+'-'+r.l+(r.t?'-'+r.t:'')+'</td><td>'+r.games+'</td><td>'+r.pct.toFixed(3)+'</td><td>'+r.pf+'</td><td>'+r.pa+'</td><td>'+(r.diff>0?'+':'')+r.diff+'</td></tr>'));
  }else if(dossierTab==='best'){
   const best=completedFranchiseSeasons(selectedTeam).filter(r=>r.games>=16).sort((a,b)=>b.pct-a.pct||b.diff-a.diff||b.w-a.w).slice(0,10);
-  $('dossierContent').innerHTML='<div class="dossier-note">Ranked by regular-season win percentage, then point differential. Only seasons with at least 16 completed games are included; this is not an era-adjusted ranking.</div>'+dossierTable(['Rank','Season','Record','Win %','Point differential'],best.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+r.season+'</td><td>'+r.w+'-'+r.l+(r.t?'-'+r.t:'')+'</td><td>'+r.pct.toFixed(3)+'</td><td>'+(r.diff>0?'+':'')+r.diff+'</td></tr>'));
+  $('dossierContent').innerHTML='<div class="dossier-note">Ranked by regular-season win percentage, then point differential. Only seasons with at least 16 completed games are included; this is not an era-adjusted ranking. Playoff finish shows the deepest postseason round reached: Wild Card, Divisional, AFC/NFC Championship, Super Bowl runner-up or Super Bowl champion.</div>'+dossierTable(['Rank','Season','Record','Win %','Point differential','Playoff finish'],best.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+r.season+'</td><td>'+r.w+'-'+r.l+(r.t?'-'+r.t:'')+'</td><td>'+r.pct.toFixed(3)+'</td><td>'+(r.diff>0?'+':'')+r.diff+'</td><td>'+esc(playoffFinishForSeason(selectedTeam,r.season))+'</td></tr>'));
  }
 }
 function init(){$('season').innerHTML=YEARS.slice().reverse().map(y=>'<option value="'+y+'">'+y+'</option>').join('');$('season').value='2026';const categories=[...new Set(METRICS.map(m=>m.category))];$('metric').innerHTML=categories.map(c=>'<optgroup label="'+c+'">'+METRICS.filter(m=>m.category===c).map(m=>'<option value="'+m.key+'">'+m.label+'</option>').join('')+'</optgroup>').join('');$('season').addEventListener('change',loadSeason);$('phase').addEventListener('change',render);$('team').addEventListener('change',()=>{selectedTeam=$('team').value;render()});$('metric').addEventListener('change',()=>{render();$('trendChart').innerHTML='';$('trendNote').textContent='Metric changed. Load the historical trend again.'});$('compareTeam').addEventListener('change',render);$('refresh').addEventListener('click',loadSeason);loadDossierData();$('trend').addEventListener('click',loadHistoricalTrend);loadSeason()}
