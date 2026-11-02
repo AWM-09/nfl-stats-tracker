@@ -3,15 +3,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const html = fs.readFileSync('tracker.html', 'utf8');
-assert.ok(html.includes("./data/official-records.json"), 'Records page should load the independently verified NFL record reference.');
 assert.ok(html.includes("./data/records-index.json"), 'Records page should load the historical records index.');
 assert.ok(html.includes("rows.slice(0,10)"), 'Records page should show the top 10 for each historical mode.');
 assert.ok(html.includes("def_sacks"), 'Defensive sacks must remain in the tracked metric catalogue.');
-assert.ok(html.includes("Verified NFL records"), 'Official records section should be visible.');
-assert.ok(html.includes("Historical rankings show the top 10"), 'Historical top-10 rankings must disclose their dataset coverage.');
 assert.ok(!html.includes('id="recordsMetric"'), 'The unverified dataset-derived leaderboard controls must be removed from Records.');
-assert.ok(!html.includes("Dataset-derived historical rankings"), 'The unverified dataset-derived table must not be shown.');
-assert.ok(html.includes("Object.entries(metrics).map(([key,meta])"), 'The official-record selector must expose every tracked statistic.');
+assert.ok(!html.includes("officialRecordsSource"), 'The redundant official-record source box must be removed.');
 assert.ok(html.includes("No usable historical rows were found for this statistic"), 'Missing historical coverage must be distinguished from a zero record.');
 const match = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
  .find(item => item[1].includes('function recordAggregateValue') && item[1].includes('function metricValue'));

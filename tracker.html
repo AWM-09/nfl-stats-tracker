@@ -154,13 +154,8 @@ select option:checked {
 </div></section><section class="panel hidden" id="draftPanel"><div class="panel-head"><h2>2027 NFL Draft Order · As It Stands</h2><span class="tag">PROVISIONAL ORDER</span></div><div class="field" style="max-width:220px;margin-bottom:12px"><label for="draftYear">Season being played</label><select id="draftYear"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015">2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option></select></div><div class="notice" id="draftNotice">Provisional draft order based on the selected season's current records. Official order changes with playoff results, strength of schedule, and trades.</div><div id="draftContent"></div></section>
 <section class="panel hidden" id="recordsPanel">
 <div class="panel-head"><h2>NFL Records Explorer</h2><span class="tag">OFFICIAL RECORD REFERENCE</span></div>
-<section class="panel" style="margin-top:12px">
-<div class="panel-head"><h3>Verified NFL records</h3><span class="tag">NFL RECORD &amp; FACT BOOK</span></div>
-<p class="muted">This page separates verified NFL all-time reference entries from historical rankings calculated from the available weekly player-stat dataset. Historical rankings show the top 10 for career, single season and single game; their coverage dates are stated and they are not presented as complete all-time records.</p>
-<div class="field" style="max-width:320px"><label for="officialRecordsCategory">Record category</label><select id="officialRecordsCategory"></select></div>
-<div class="notice" id="officialRecordsSource">Loading the official-record reference…</div>
+<div class="field" style="max-width:320px"><label for="officialRecordsCategory">Statistic</label><select id="officialRecordsCategory"></select></div>
 <div id="officialRecordsResults"></div>
-</section>
 </section>
 <section class="panel hidden" id="calendarPanel">
 <div class="panel-head"><h2>NFL Schedule & Scores</h2><span class="tag">SCHEDULE</span></div>
@@ -1208,57 +1203,41 @@ function setupRecordsControls(){
  $('officialRecordsCategory').addEventListener('change',renderOfficialRecords);
  loadOfficialRecords();
 }
-let officialRecordsPayload=null,recordsIndexPayload=null;
+let recordsIndexPayload=null;
 async function loadOfficialRecords(){
- const select=$('officialRecordsCategory'),source=$('officialRecordsSource'),results=$('officialRecordsResults');
+ const select=$('officialRecordsCategory'),results=$('officialRecordsResults');
  try{
-  if(!officialRecordsPayload){
-   const response=await fetch('./data/official-records.json',{cache:'no-store'});
-   if(!response.ok)throw new Error('HTTP '+response.status);
-   officialRecordsPayload=await response.json();
-  }
   if(!recordsIndexPayload){
    const response=await fetch('./data/records-index.json',{cache:'no-store'});
    if(!response.ok)throw new Error('Historical records index HTTP '+response.status);
    recordsIndexPayload=await response.json();
   }
   const current=select.value||'passing_yards';
-  // Expose every stat the analytics platform tracks (currently 78), rather
-  // than limiting the selector to the four sections with hand-verified rows.
   select.innerHTML=Object.entries(metrics).map(([key,meta])=>
    '<option value="'+esc(key)+'">'+esc(meta.label)+'</option>'
   ).join('');
   select.value=metrics[current]?current:'passing_yards';
-  source.innerHTML='Source: <a href="'+esc(officialRecordsPayload.source_url)+'" target="_blank" rel="noopener noreferrer">'+esc(officialRecordsPayload.source_edition)+'</a> · Statistics in that edition current through '+esc(officialRecordsPayload.statistics_current_through)+'. '+esc(officialRecordsPayload.method_note||'');
   renderOfficialRecords();
  }catch(error){
-  source.textContent='Could not load the independently checked record reference: '+error.message;
-  results.innerHTML='<div class="notice">The official record reference is unavailable. No unverified record rankings are displayed.</div>';
+  results.innerHTML='<div class="notice">Could not load historical records: '+esc(error.message)+'</div>';
  }
 }
 function renderOfficialRecords(){
- if(!officialRecordsPayload||!recordsIndexPayload)return;
+ if(!recordsIndexPayload)return;
  const metricKey=$('officialRecordsCategory').value;
- const metricMeta=metrics[metricKey];
- const metricToOfficialCategory={passing_yards:'Passing yards',passing_tds:'Passing touchdowns',rushing_yards:'Rushing yards',receiving_yards:'Receiving yards'};
- const officialCategory=metricToOfficialCategory[metricKey]||'';
- const officialEntries=officialCategory?(officialRecordsPayload.records||[]).filter(r=>r.category===officialCategory):[];
  const modes=[['career','Career'],['season','Single season'],['weekly','Single game']];
  const phase='REG';
  const datasetGroups=modes.map(([mode,label])=>{
   const rows=recordsIndexPayload.index&&recordsIndexPayload.index[mode]&&recordsIndexPayload.index[mode][phase]&&recordsIndexPayload.index[mode][phase][metricKey]||[];
   return {label:label,rows:rows.slice(0,10)};
  }).filter(group=>group.rows.length);
- const officialHtml=officialEntries.length?'<h4 style="margin:14px 0 7px">Verified NFL all-time reference</h4><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Value</th><th>Season / years</th></tr></thead><tbody>'+
-  officialEntries.sort((a,b)=>a.rank-b.rank).map(r=>'<tr><td>'+r.rank+'</td><td><b>'+esc(r.holder)+'</b></td><td>'+esc(r.team||'—')+'</td><td><b>'+Number(r.value).toLocaleString('en-US')+' '+esc(r.unit||'')+'</b></td><td>'+esc(r.season_or_years||'—')+'</td></tr>').join('')+
-  '</tbody></table></div>':'';
  const datasetHtml=datasetGroups.map(group=>'<h4 style="margin:18px 0 7px">'+esc(group.label)+' · top 10</h4><div class="tablewrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Value</th><th>Season / game</th></tr></thead><tbody>'+
   group.rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(r.player||'—')+'</b></td><td>'+esc(r.team||'—')+'</td><td><b>'+fmt(r.value,metricKey)+'</b></td><td>'+esc(r.scope||'—')+'</td></tr>').join('')+
   '</tbody></table></div>').join('');
  const loaded=recordsIndexPayload.loaded_years||[];
  const coverage=loaded.length?Math.min(...loaded)+'–'+Math.max(...loaded):'unknown';
- const status='<div class="notice">Historical rankings use player statistics for '+esc(coverage)+' ('+loaded.length+' seasons loaded), regular season only. These are top-10 rankings within the available dataset, not automatically all-time NFL records. The official NFL reference is displayed separately wherever available.</div>';
- $('officialRecordsResults').innerHTML=status+officialHtml+(datasetHtml||'<div class="notice">No usable historical rows were found for this statistic. This is a source-coverage gap, not a zero-record result.</div>');
+ const status='<div class="notice">Historical rankings use player statistics for '+esc(coverage)+' ('+loaded.length+' seasons loaded), regular season only. These are top-10 rankings within the available dataset, not automatically complete all-time NFL records.</div>';
+ $('officialRecordsResults').innerHTML=status+(datasetHtml||'<div class="notice">No usable historical rows were found for this statistic. This is a source-coverage gap, not a zero-record result.</div>');
 }
 async function renderRecords(){
  await loadOfficialRecords();
