@@ -524,7 +524,9 @@ jobs:
           PY
 
       - name: Run published site integration checks
-        run: node scripts/test_site.js
+        run: |
+          node scripts/test_video_maker.js
+          node scripts/test_site.js
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
