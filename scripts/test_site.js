@@ -104,7 +104,7 @@ const toolContracts = {
   },
   'tracker.html': {
     ids: ['viewTabs','recordsPanel','comparePanel','teamComparePanel','factPanel','contentStudioPanel','videoSeason','videoWeek','videoGame','videoMode','videoDuration','videoPlatform','gameVideoOutput'],
-    functions: ['loadData','renderPlayerCompare','renderTeamCompare','renderRecords','renderFactGenerator','buildContentPack','gameVideoWeeks','gameVideoGames','buildGameVideoScript','generateGameVideo']
+    functions: ['loadData','renderPlayerCompare','renderTeamCompare','renderRecords','renderFactGenerator','buildContentPack','gameVideoWeeks','gameVideoGames','gameVideoTurningPoints','loadGameVideoPlayByPlay','buildGameVideoScript','generateGameVideo']
   }
 };
 for (const [page, contract] of Object.entries(toolContracts)) {

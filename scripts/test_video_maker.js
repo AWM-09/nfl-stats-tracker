@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync('tracker.html', 'utf8');
-const names = ['gameVideoGames','gameVideoWeeks','gameDateLabel','gameVideoRecord','gameVideoPlayers','buildGameVideoScript'];
+const names = ['gameVideoGames','gameVideoWeeks','gameDateLabel','gameVideoRecord','gameVideoPlayers','gameVideoTurningPoints','buildGameVideoScript'];
 const extracted = names.map(name => {
   const start = html.indexOf('function ' + name + '(');
   assert.notEqual(start, -1, 'Missing video maker function ' + name);
@@ -14,8 +14,8 @@ const extracted = names.map(name => {
 }).join('\n');
 
 const rows = [
-  {season:2025,week:17,game_type:'REG',home_team:'BUF',away_team:'MIA',home_score:'21',away_score:'14',gameday:'2025-12-28'},
-  {season:2026,week:1,game_type:'REG',home_team:'BUF',away_team:'MIA',home_score:'',away_score:'',gameday:'2026-09-10',gametime:'8:15 PM'},
+  {season:2025,week:17,game_type:'REG',game_id:'old',home_team:'BUF',away_team:'MIA',home_score:'21',away_score:'14',gameday:'2025-12-28'},
+  {season:2026,week:1,game_type:'REG',game_id:'gm1',home_team:'BUF',away_team:'MIA',home_score:'',away_score:'',gameday:'2026-09-10',gametime:'8:15 PM'},
   {season:2026,week:2,game_type:'REG',home_team:'NYJ',away_team:'NE',home_score:'',away_score:'',gameday:'2026-09-17'},
   {season:2026,week:17,game_type:'REG',home_team:'MIA',away_team:'BUF',home_score:'',away_score:'',gameday:'2027-01-03'}
 ];
@@ -51,7 +51,7 @@ assert.match(pre, /simple record comparison, not a model forecast/);
 
 const post = context.buildGameVideoScript(rows[1], 'POST', 2026, 1, 60, 'YouTube Shorts');
 assert.match(post, /Final score unavailable/);
-assert.match(post, /Play-by-play turning points are unavailable/);
+assert.match(post, /no usable win-probability play data/);
 assert.match(post, /Josh Allen \(24\.0 standard fantasy points\)/);
 assert.match(post, /Next meeting listed in the schedule: 2027-01-03, 2026 Week 17/);
 assert.match(post, /0–5s · RESULT/);
@@ -59,5 +59,14 @@ assert.match(post, /0–5s · RESULT/);
 const longer = context.buildGameVideoScript(rows[1], 'POST', 2026, 1, 90, 'Instagram Reels');
 assert.match(longer, /POST-GAME · 90s · Instagram Reels/);
 assert.match(longer, /0–8s · RESULT/);
+
+const turns = context.gameVideoTurningPoints(rows[1], [
+  {game_id:'gm1',desc:'Short gain',qtr:'1',time:'10:00',wpa:'0.02'},
+  {game_id:'gm1',desc:'Game-changing interception',qtr:'4',time:'02:00',wpa:'-0.45'},
+  {game_id:'other',desc:'Other game',qtr:'2',time:'04:00',wpa:'0.90'}
+]);
+assert.equal(turns.length, 2);
+assert.match(turns[0], /Game-changing interception/);
+assert.match(turns[0], /WPA -0\.450/);
 
 console.log('Game video maker selection and PRE/POST generation checks passed.');
