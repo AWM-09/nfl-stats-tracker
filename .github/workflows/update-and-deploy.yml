@@ -105,6 +105,9 @@ jobs:
       - name: Test NFL Research Lab calculations
         run: node scripts/test_research.js
 
+      - name: Validate Commentary Box structure and data assumptions
+        run: node scripts/test_commentary.js
+
       - name: Test fourth-down attempt classification
         run: python3 -m unittest discover -s scripts -p 'test_team_stats.py'
 

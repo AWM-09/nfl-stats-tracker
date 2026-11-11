@@ -1,3 +1,7 @@
+## 2026-11-11
+
+- Added the Commentary Box home-page card and dedicated responsive page with statistical facts, commentary/content drafting, and schedule-based pregame/postgame notes. Data gaps are stated in the output; generated prose is a draft.
+
 ## 2026-10-30
 
 - Added a dedicated platform homepage that organises all existing tools into a clear navigation structure; moved the original weekly dashboard to `tracker.html`.
