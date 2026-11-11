@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#09111a">
-<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=1">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=2">
 <title>AlexMyrusTalksSports | NFL Analytics Platform</title>
 <style>
 :root{color-scheme:dark;--bg:#09111a;--panel:#111e2b;--line:#2a4052;--text:#eef5fa;--muted:#9db0bf;--accent:#71d6b3;--gold:#f1c46b;--red:#ff9292}
@@ -13,8 +13,9 @@ a{color:inherit;text-decoration:none}main{max-width:1440px;margin:auto;padding:2
 .hero{padding:38px 0 26px;max-width:940px}.hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}.button{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:10px;border:1px solid var(--line);font-weight:850}.button.primary{background:var(--accent);border-color:var(--accent);color:#092016}.button.youtube{background:#d72d35;border-color:#d72d35;color:#fff}.button:hover{filter:brightness(1.09)}
 .healthbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 15px;border:1px solid var(--line);border-radius:12px;background:rgba(17,30,43,.8);color:var(--muted);font-size:13px}.dot{width:9px;height:9px;border-radius:50%;background:var(--gold);flex:none}.dot.good{background:var(--accent)}.dot.bad{background:var(--red)}
 .section-title{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin:30px 0 14px}.section-title h2{font-size:23px;margin:0}.section-title p{color:var(--muted);margin:0;font-size:13px}.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.tool{display:flex;flex-direction:column;gap:9px;padding:17px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(155deg,rgba(23,40,56,.97),rgba(14,26,38,.97));min-height:160px;transition:transform .15s,border-color .15s}.tool:hover{transform:translateY(-2px);border-color:#497365}.tool-top{display:flex;justify-content:space-between;gap:10px;align-items:center}.iconbox{width:38px;height:38px;display:grid;place-items:center;border:1px solid #35566a;border-radius:10px;background:#102a37;font-size:19px}.arrow{color:var(--accent);font-size:17px}.tool h3{font-size:17px;margin:2px 0 0}.tool p{font-size:13px;color:var(--muted);margin:0}.tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:850}.feature-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}.feature{padding:19px;border-radius:14px;border:1px solid var(--line);background:#10202c}.feature h3{margin:0 0 5px}.feature p{color:var(--muted);margin:0;font-size:13px}.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);border-top:1px solid var(--line);margin-top:34px;padding-top:16px;font-size:12px}
+.recommend{margin-top:30px;padding:clamp(18px,3vw,26px);border:1px solid #35566a;border-radius:16px;background:linear-gradient(145deg,rgba(17,35,48,.98),rgba(14,26,38,.98))}.recommend-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.recommend h2{font-size:23px;margin:0}.recommend p{color:var(--muted);margin:5px 0 0;font-size:13px}.recommend form{margin-top:16px}.recommend label{display:block;font-weight:750;margin-bottom:7px}.recommend textarea{display:block;width:100%;min-height:130px;resize:vertical;padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:#09141e;color:var(--text);font:inherit}.recommend textarea:focus{outline:2px solid var(--accent);outline-offset:2px}.recommend textarea[aria-invalid="true"]{border-color:var(--red)}.recommend-meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px;color:var(--muted);font-size:12px}.recommend-note{margin-top:12px!important;padding:10px 12px;border-left:3px solid var(--gold);background:rgba(241,196,107,.07);border-radius:4px;color:#e5d4a7!important}.recommend-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}.recommend-status{min-height:1.5em;font-size:13px}.recommend-status.error{color:var(--red)}.recommend-status.success{color:var(--accent)}.recommend button:disabled{opacity:.65;cursor:wait}.recommend .hp-field{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
 @media(max-width:900px){.tools{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-grid{grid-template-columns:1fr}}
-@media(max-width:560px){main{padding:16px 10px 32px}.logo{width:50px;height:50px}.brand{align-items:flex-start}.nav{justify-content:flex-start;gap:4px}.nav a{padding:7px}.hero{padding:22px 0 18px}.sub{font-size:14px}.tools{grid-template-columns:1fr}.tool{min-height:unset}.button{flex:1}.healthbar{align-items:flex-start}}
+@media(max-width:560px){main{padding:16px 10px 32px}.logo{width:50px;height:50px}.brand{align-items:flex-start}.nav{justify-content:flex-start;gap:4px}.nav a{padding:7px}.hero{padding:22px 0 18px}.sub{font-size:14px}.tools{grid-template-columns:1fr}.tool{min-height:unset}.button{flex:1}.healthbar{align-items:flex-start}.recommend-actions .button{width:100%}}
 </style>
 </head>
 <body>
@@ -50,6 +51,18 @@ a{color:inherit;text-decoration:none}main{max-width:1440px;margin:auto;padding:2
  <div class="feature"><h3>Research → Evidence → Content</h3><p>Start with historical data, compare the numbers, validate the definitions and turn the findings into a research brief or commentary outline.</p></div>
  <div class="feature"><h3>Transparent data coverage</h3><p>Traditional statistics and advanced metrics do not have identical historical coverage. Missing values remain missing instead of being silently treated as zero.</p></div>
 </section>
+<section class="recommend" aria-labelledby="recommendTitle">
+ <div class="recommend-head"><div><h2 id="recommendTitle">Recommend a Feature</h2><p>Have an idea that would make the stats platform more useful? Send it directly to Alex.</p></div></div>
+ <form id="recommendForm" novalidate>
+  <label for="recommendation">Your recommendation</label>
+  <textarea id="recommendation" name="message" minlength="10" maxlength="1000" required aria-describedby="recommendHint recommendCount recommendStatus" placeholder="Describe the feature you would like to see…"></textarea>
+  <div class="recommend-meta"><span id="recommendHint">10–1,000 characters</span><span id="recommendCount" aria-live="polite">0 / 1,000</span></div>
+  <p class="recommend-note">Please don’t include private or sensitive information. First-time setup requires the recipient to confirm FormSubmit’s activation email before recommendations can be delivered.</p>
+  <label class="hp-field" aria-hidden="true" for="recommendWebsite">Leave this field empty</label><input class="hp-field" id="recommendWebsite" type="text" name="_honey" tabindex="-1" autocomplete="off">
+  <input type="hidden" name="_subject" value="NFL Stats Tracker feature recommendation">
+  <div class="recommend-actions"><button class="button primary" id="recommendSend" type="submit">Send Recommendation</button><span class="recommend-status" id="recommendStatus" role="status" aria-live="polite"></span></div>
+ </form>
+</section>
 <footer class="footer"><span>AlexMyrusTalksSports · Independent NFL statistics and learning project</span><span>Data: nflverse · Not affiliated with or endorsed by the NFL.</span><span><a href="https://www.youtube.com/@AlexMyrusTalksSports" target="_blank" rel="noopener noreferrer">AlexMyrusTalksSports on YouTube ↗</a></span></footer>
 </main>
 <script>
@@ -65,6 +78,28 @@ a{color:inherit;text-decoration:none}main{max-width:1440px;margin:auto;padding:2
   const date=build.generated_at?new Date(build.generated_at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/London'}):'unknown';
   detail.textContent='Last build: '+date+' · '+manifest.player_seasons+' player seasons indexed · '+manifest.files_checked+' files checked';
  }catch(error){dot.classList.add('bad');label.textContent='Data status unavailable';detail.textContent='Open System Health for details.';}
+})();
+</script>
+<script>
+(()=>{
+ const form=document.getElementById('recommendForm'),field=document.getElementById('recommendation'),count=document.getElementById('recommendCount'),status=document.getElementById('recommendStatus'),button=document.getElementById('recommendSend'),honeypot=document.getElementById('recommendWebsite');
+ const updateCount=()=>{count.textContent=field.value.length+' / 1,000';field.removeAttribute('aria-invalid');if(status.classList.contains('error')){status.textContent='';status.className='recommend-status';}};
+ field.addEventListener('input',updateCount);
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();status.textContent='';status.className='recommend-status';
+  const message=field.value.trim();
+  if(message.length<10){field.setAttribute('aria-invalid','true');status.textContent='Please enter at least 10 characters.';status.classList.add('error');field.focus();return;}
+  if(message.length>1000){field.setAttribute('aria-invalid','true');status.textContent='Please keep your recommendation to 1,000 characters or fewer.';status.classList.add('error');field.focus();return;}
+  if(honeypot.value)return;
+  field.removeAttribute('aria-invalid');button.disabled=true;button.textContent='Sending…';
+  try{
+   const response=await fetch('https://formsubmit.co/ajax/alex@myrus.com',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({message,_subject:'NFL Stats Tracker feature recommendation',_honey:honeypot.value})});
+   const result=await response.json();
+   if(!response.ok||!(result.success===true||result.success==='true'))throw new Error('The service did not accept the recommendation.');
+   status.textContent='Thanks — your recommendation was submitted. First-time delivery starts after the recipient confirms FormSubmit’s activation email.';status.classList.add('success');form.reset();updateCount();
+  }catch(error){status.textContent='We couldn’t send your recommendation. Please try again in a moment.';status.classList.add('error');}
+  finally{button.disabled=false;button.textContent='Send Recommendation';}
+ });
 })();
 </script>
 </body>
