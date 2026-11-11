@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 43471)
-Total output lines: 1303
+Warning: truncated output (original token count: 43671)
+Total output lines: 1307
 
 <!doctype html>
 <html lang="en">
@@ -313,9 +313,9 @@ function metricValue(r,k){const m=metrics[k];if(m.max){const v=first(r,m.cols||[
  if(k==='standard_fantasy_points'){const source=first(r,['fantasy_points']);if(source!==''){const exact=Number(source);if(Number.isFinite(exact))return exact;}return (hasCol(r,['passing_yards'])||hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?py/25+ptd*4-ints*2+ry/10+num(r.rushing_tds)*6+recy/10+num(r.receiving_tds)*6:null;}
  }
  if(m.rate){const a=num(r.attempts);return a?100*num(r.completions)/a:null}if(m.rating)return passerRating(r);if(k==='fumbles_recovered'){if(!hasCol(r,['fumbles_total'])||!hasCol(r,['fumbles_lost_total']))return null;return Math.max(0,num(r.fumbles_total)-num(r.fumbles_lost_total))}if(k==='def_fumble_recoveries'){const direct=first(r,['def_fumble_recoveries','fumble_recoveries','def_fumble_recovery']);if(direct!==''){const value=Number(direct);return Number.isFinite(value)?value:null;}const own=first(r,['fumble_recovery_own','def_fumble_recovery_own']),opp=first(r,['fumble_recovery_opp']);if(own===''||opp==='')return null;return num(own)+num(opp);}if(!hasCol(r,m.cols||[]))return null;const v=first(r,m.cols||[]);if(v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
-function fmt(v,k){if(v===null||v===undefined||!Number.isFinite(Number(v)))return'—';if(['completion_pct','pass_td_pct','pass_int_pct','catch_rate','rece…13471 tokens truncated…abel>Weeks to include (applies to each selected season)</label><div class="week-tools"><button class="btn" type="button" data-week-action="all">Select all</button><button class="btn" type="button" data-week-action="clear">Clear</button></div><div class="compare-weeks">__WEEKS__</div></div></div>'
- ].join('');
- return html.replaceAll('__I__',String(i)).replace('__PLAYER__',p).replace('__YEARS__',yearsHtml).replace('__WEEKS__',weeksHtml);
+function fmt(v,k){if(v===null||v===undefined||!Number.isFinite(Number(v)))return'—';if(['completion_pct','pass_td_pct','pass_int_pct','catch_rate','rece…13671 tokens truncated…t.weekAction=action;tools.append(button);});weeksField.append(tools);
+ const weeks=make('div','compare-weeks');for(let week=1;week<=22;week++){const label=make('label');const input=make('input');input.type='checkbox';input.dataset.field='weeks';input.value=String(week);input.checked=week<=6;label.append(input,document.createTextNode('W'+week));weeks.append(label);}weeksField.append(weeks);card.append(weeksField);
+ return card.outerHTML;
 }
 let selectedPlayerCompareStats=['passing_yards','passing_tds','rushing_yards','receiving_yards'];
 function renderStatChips(boxId,items,onRemove){const box=$(boxId);if(!box)return;box.innerHTML=items.map(k=>'<span class="selected-team-chip">'+esc(metrics[k]?.label||k)+'<button type="button" data-remove-stat="'+esc(k)+'" aria-label="Remove '+esc(metrics[k]?.label||k)+'" title="Remove statistic">×</button></span>').join('')||'<span class="small muted">No statistics added yet.</span>';box.querySelectorAll('[data-remove-stat]').forEach(b=>b.addEventListener('click',()=>onRemove(b.dataset.removeStat)));}
