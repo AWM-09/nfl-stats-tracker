@@ -1,4 +1,4 @@
-- Added weekly pregame/postgame roundups with schedule-based playoff and draft context, plus selectable-week score forecasts and a copyable 60-second predictions script.
+- Added weekly pregame/postgame roundups with schedule-based playoff and draft context, plus selectable-week score forecasts and a copyable three-minute predictions script that covers every game with winner-first scores.
 - Expanded Commentary Box matchup forecasting, latest-meeting detail, play-by-play analysis, longer delivery-specific scripts and optional-input content packs.
 ## 2026-11-11
 

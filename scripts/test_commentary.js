@@ -16,8 +16,8 @@ for (const id of [
 for (const feature of ['buildPregame', 'buildPostgame', 'factGen', 'draft', 'buildContent', 'recordsBefore', 'forecast', 'nextMeeting', 'pregameContext', 'postgameReport', 'standingsFor', 'conferenceContext', 'buildWeekly', 'buildWeekPredictions', 'updateWeekOptions', 'loadGamePlays', 'gamePlaySummary']) {
   assert.match(page, new RegExp(`function ${feature}\\(`), `Missing ${feature} generator`);
 }
-assert.match(page, /schedule\.csv\?v=commentary-20261111-v3/, 'Schedule request should use cache busting');
-assert.match(page, /stats_player_week_\$\{current\}\.csv\?v=commentary-20261111-v3/, 'Player stats request should use cache busting');
+assert.match(page, /schedule\.csv\?v=commentary-20261111-v4/, 'Schedule request should use cache busting');
+assert.match(page, /stats_player_week_\$\{current\}\.csv\?v=commentary-20261111-v4/, 'Player stats request should use cache busting');
 assert.match(page, /String\(v\)\.trim\(\)===''|String\(v\)\.trim\(\)===\"\"/, 'Blank schedule scores must not be treated as zero');
 assert.match(page, /x\.value>0/, 'Zero-valued players should not be described as game performances');
 assert.match(page, /PREDICTION/, 'Pregame notes should state the explicit model prediction');
@@ -26,8 +26,11 @@ assert.doesNotMatch(page, /Add at least 10 characters of evidence/, 'Content Stu
 assert.match(page, /Optional extra notes/, 'Content notes should be clearly optional');
 assert.match(page, /COMPARATIVE READ/, 'Postgame analysis should compare team production');
 assert.match(page, /PLAYOFF \+ DRAFT CONTEXT/, 'Weekly roundup should include race context');
-assert.match(page, /60-SECOND SCRIPT/, 'Weekly prediction tool should display its 60-second script label');
-assert.match(page, /Here are my schedule-based picks for Week/, 'Weekly prediction generator should create a spoken predictions script');
+assert.match(page, /3-MINUTE SCRIPT/, 'Weekly prediction tool should display its three-minute script label');
+assert.match(page, /Write my 3-minute picks/, 'Weekly prediction button should state the target duration');
+assert.match(page, /every regular-season game in Week/, 'Weekly script should announce full-slate coverage');
+assert.match(page, /picks\.map\(\(x,i\)=>/, 'Script should narrate each selected-week game');
+assert.match(page, /My projected score is \${winner} \${x\.winnerScore}, \${opponent} \${x\.opponentScore}/, 'Script should state each winner and both scores in winner-first order');
 assert.match(page, /No tiebreakers|does not calculate NFL tiebreakers/, 'Weekly standings context should state its limitations');
 assert.match(page, /String\(x\.season\)===String\(game\.season\)/, 'Forecast records must be restricted to the selected season');
 assert.match(page, /play_by_play_\$\{season\}\.csv\.gz/, 'Postgame recap must load the published play-by-play data');
