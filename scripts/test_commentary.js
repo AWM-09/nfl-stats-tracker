@@ -13,7 +13,7 @@ for (const id of [
   'postgameOutput', 'factsOutput', 'commentaryOutput', 'contentOutput'
 ]) assert.match(page, new RegExp(`id=["']${id}["']`), `Commentary page is missing #${id}`);
 
-for (const feature of ['buildPregame', 'buildPostgame', 'factGen', 'draft', 'buildContent']) {
+for (const feature of ['buildPregame', 'buildPostgame', 'factGen', 'draft', 'buildContent', 'playerSeasonTop']) {
   assert.match(page, new RegExp(`function ${feature}\\(`), `Missing ${feature} generator`);
 }
 assert.match(page, /schedule\.csv\?v=commentary-20261111/, 'Schedule request should use cache busting');
