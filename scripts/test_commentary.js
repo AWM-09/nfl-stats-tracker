@@ -18,6 +18,8 @@ for (const feature of ['buildPregame', 'buildPostgame', 'factGen', 'draft', 'bui
 }
 assert.match(page, /schedule\.csv\?v=commentary-20261111/, 'Schedule request should use cache busting');
 assert.match(page, /stats_player_week_\$\{current\}\.csv\?v=commentary-20261111/, 'Player stats request should use cache busting');
+assert.match(page, /String\(v\)\.trim\(\)===''|String\(v\)\.trim\(\)===\"\"/, 'Blank schedule scores must not be treated as zero');
+assert.match(page, /x\.value>0/, 'Zero-valued players should not be described as game performances');
 assert.match(home, /href="\.\/commentary\.html(?:\?[^\"]*)?"/, 'Home page must link to Commentary Box');
 const teamBuilder = fs.readFileSync(path.join(root, 'scripts', 'build_team_stats.py'), 'utf8');
 for (const column of ['points_scored', 'points_allowed', 'offensive_yards', 'yards_allowed', 'third_down_pct']) {
