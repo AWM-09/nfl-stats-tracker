@@ -1,3 +1,4 @@
+- Expanded Commentary Box matchup forecasting, latest-meeting detail, play-by-play analysis, longer delivery-specific scripts and optional-input content packs.
 ## 2026-11-11
 
 - Added the Commentary Box home-page card and dedicated responsive page with statistical facts, commentary/content drafting, and schedule-based pregame/postgame notes. Data gaps are stated in the output; generated prose is a draft.
