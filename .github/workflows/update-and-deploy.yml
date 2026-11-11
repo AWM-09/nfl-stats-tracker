@@ -446,6 +446,8 @@ jobs:
           set -euo pipefail
           mkdir -p site/data
           cp index.html site/index.html
+          cp commentary.html site/commentary.html
+          test -s site/commentary.html
           cp teams.html site/teams.html
           test -s site/teams.html
           cp tracker.html site/tracker.html

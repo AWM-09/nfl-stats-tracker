@@ -7,7 +7,7 @@ const path = require('node:path');
 const site = path.resolve('site');
 const expectedPages = [
   'index.html','tracker.html','player.html','health.html','advanced.html',
-  'research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','teams.html'
+  'research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','teams.html','commentary.html'
 ];
 
 for (const page of expectedPages) {
@@ -47,7 +47,7 @@ assert.equal(Object.keys(teamData.teams || {}).length, 32, 'Team Platform must c
 assert.ok(Object.values(teamData.teams).every(team => Array.isArray(team.roster)), 'Every franchise must expose a roster array, even when the source feed is incomplete.');
 
 const home = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
-for (const target of ['tracker.html','player.html','teams.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html']) {
+for (const target of ['tracker.html','player.html','teams.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html','commentary.html']) {
   assert.ok(home.includes('./' + target), 'Homepage is missing a link to ' + target);
 }
 
