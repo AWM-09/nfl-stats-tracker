@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 43671)
-Total output lines: 1307
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -313,7 +310,357 @@ function metricValue(r,k){const m=metrics[k];if(m.max){const v=first(r,m.cols||[
  if(k==='standard_fantasy_points'){const source=first(r,['fantasy_points']);if(source!==''){const exact=Number(source);if(Number.isFinite(exact))return exact;}return (hasCol(r,['passing_yards'])||hasCol(r,['rushing_yards'])||hasCol(r,['receiving_yards']))?py/25+ptd*4-ints*2+ry/10+num(r.rushing_tds)*6+recy/10+num(r.receiving_tds)*6:null;}
  }
  if(m.rate){const a=num(r.attempts);return a?100*num(r.completions)/a:null}if(m.rating)return passerRating(r);if(k==='fumbles_recovered'){if(!hasCol(r,['fumbles_total'])||!hasCol(r,['fumbles_lost_total']))return null;return Math.max(0,num(r.fumbles_total)-num(r.fumbles_lost_total))}if(k==='def_fumble_recoveries'){const direct=first(r,['def_fumble_recoveries','fumble_recoveries','def_fumble_recovery']);if(direct!==''){const value=Number(direct);return Number.isFinite(value)?value:null;}const own=first(r,['fumble_recovery_own','def_fumble_recovery_own']),opp=first(r,['fumble_recovery_opp']);if(own===''||opp==='')return null;return num(own)+num(opp);}if(!hasCol(r,m.cols||[]))return null;const v=first(r,m.cols||[]);if(v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
-function fmt(v,k){if(v===null||v===undefined||!Number.isFinite(Number(v)))return'—';if(['completion_pct','pass_td_pct','pass_int_pct','catch_rate','rece…13671 tokens truncated…t.weekAction=action;tools.append(button);});weeksField.append(tools);
+function fmt(v,k){if(v===null||v===undefined||!Number.isFinite(Number(v)))return'—';if(['completion_pct','pass_td_pct','pass_int_pct','catch_rate','receiving_drop_pct','fg_pct','pat_pct'].includes(k))return Number(v).toFixed(1)+'%';if(k==='average_time_to_throw')return Number(v).toFixed(2)+' s';if(['passer_rating','passing_epa','pass_yards_per_attempt','rushing_yards_per_carry','receiving_yards_per_catch','receiving_yards_per_target','td_int_ratio'].includes(k))return Number(v).toFixed(1);return Number(v).toLocaleString(undefined,{maximumFractionDigits:1})}
+function availableWeeks(){return [...new Set(seasonRows().map(r=>r.week).filter(w=>w>=1&&w<=22))].sort((a,b)=>a-b)}
+function buildTeams(){const sel=$('team'),old=sel.value;sel.innerHTML='<option value="">All teams</option>';[...new Set(seasonRows().map(r=>r.team).filter(Boolean))].sort().forEach(t=>sel.add(new Option(teamName(t),t)));sel.value=[...sel.options].some(o=>o.value===old)?old:''}
+function populateSeasonDropdown(id,selected){const el=$(id);if(!el)return;el.innerHTML=YEARS.slice().sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('');el.value=String(YEARS.includes(+selected)?+selected:2026)}
+function updateSelectors(reset=true){const ys=YEARS.slice().sort((a,b)=>b-a);const old=+$('year').value;populateSeasonDropdown('year',old);$('year').value=ys.includes(old)?String(old):String(ys.includes(2026)?2026:ys[0]||2026);const ws=availableWeeks();$('weekSelect').innerHTML=ws.map(w=>`<option value="${w}">Week ${w}</option>`).join('');if(!ws.includes(week))week=ws[0]||1;$('weekSelect').value=String(week);if(reset||!selectedWeeks.length)selectedWeeks=ws.length?[week]:[];renderWeeks();buildTeams()}
+function renderWeeks(){const ws=availableWeeks();$('weekChoices').innerHTML=ws.map(w=>`<button class="week ${selectedWeeks.includes(w)?'active':''}" data-week="${w}">Week ${w}</button>`).join('');$('weekChoices').querySelectorAll('button').forEach(b=>b.onclick=()=>{const w=+b.dataset.week;selectedWeeks=selectedWeeks.includes(w)?selectedWeeks.filter(x=>x!==w):[...selectedWeeks,w].sort((a,b)=>a-b);renderWeeks();render()});$('selectedWeeksNote').textContent=selectedWeeks.length?'Selected: '+selectedWeeks.map(w=>'Week '+w).join(', '):'No weeks selected';$('allWeeksBtn').onclick=()=>{selectedWeeks=ws.slice();renderWeeks();render()};$('clearWeeksBtn').onclick=()=>{selectedWeeks=[];renderWeeks();render()}}
+function aggregate(data,weeks){const map=new Map();data.filter(r=>weeks.includes(r.week)).forEach(r=>{const k=[r.player,r.team,r.position].join('|');if(!map.has(k))map.set(k,{player:r.player,team:r.team,position:r.position,rows:[]});map.get(k).rows.push(r)});return [...map.values()].map(g=>{const o={...g};for(const [k,m] of Object.entries(metrics)){const vals=g.rows.map(r=>metricValue(r,k)).filter(v=>v!==null&&v!==undefined);if(m.rate){const attempts=g.rows.reduce((s,r)=>s+num(r.attempts),0),comps=g.rows.reduce((s,r)=>s+num(r.completions),0);o[k]=attempts?100*comps/attempts:null}else if(m.max){o[k]=vals.length?Math.max(...vals.map(Number)):null}else if(m.average){const a=vals.filter(v=>v!==null&&Number.isFinite(Number(v)));o[k]=a.length?a.reduce((x,y)=>x+Number(y),0)/a.length:null}else if(m.rating){o[k]=passerRatingForRows(g.rows)}else if(m.derived){
+ const sum=(field)=>g.rows.reduce((s,r)=>s+num(r[field]),0), attempts=sum('attempts'), completions=sum('completions'), ints=sum('passing_interceptions'), ptd=sum('passing_tds'), carries=g.rows.reduce((s,r)=>s+num(first(r,['carries','rushing_attempts'])),0), rec=sum('receptions'), targets=sum('targets'), recy=sum('receiving_yards'), ry=sum('rushing_yards'), py=sum('passing_yards');
+ if(k==='pass_yards_per_attempt')o[k]=attempts?py/attempts:null;else if(k==='pass_td_pct')o[k]=attempts?100*ptd/attempts:null;else if(k==='pass_int_pct')o[k]=attempts?100*ints/attempts:null;else if(k==='td_int_ratio')o[k]=ints?ptd/ints:(ptd>0?ptd:null);else if(k==='rushing_yards_per_carry')o[k]=carries?ry/carries:null;else if(k==='receiving_yards_per_catch')o[k]=rec?recy/rec:null;else if(k==='receiving_yards_per_target')o[k]=targets?recy/targets:null;else if(k==='receiving_drop_pct'){const drops=sum('receiving_drops')||sum('drops');o[k]=targets?100*drops/targets:null;}else if(k==='fg_pct'){const made=sum('fg_made'),att=sum('fg_att')||sum('fg_attempts');o[k]=att?100*made/att:null;}else if(k==='pat_pct'){const made=sum('pat_made'),att=sum('pat_att')||sum('pat_attempts');o[k]=att?100*made/att:null;}else if(k==='catch_rate')o[k]=targets?100*rec/targets:null;else o[k]=vals.length?vals.reduce((a,b)=>a+b,0):null;
+ }else o[k]=vals.length?vals.reduce((a,b)=>a+b,0):null}return o})}
+function currentData(){const data=filtered();if(view==='weekly'){const selectedWeek=+$('weekSelect').value||week;return data.filter(r=>Number(r.week)===selectedWeek).map(r=>{const o={...r};Object.keys(metrics).forEach(k=>o[k]=metricValue(r,k));return o})}if(view==='compare')return data.filter(r=>selectedWeeks.includes(Number(r.week))).map(r=>{const o={...r};Object.keys(metrics).forEach(k=>o[k]=metricValue(r,k));return o});return aggregate(data,selectedWeeks)}
+function sortData(d){const k=$('metric').value;return [...d].sort((a,b)=>(b[k]??-Infinity)-(a[k]??-Infinity)||String(a.player).localeCompare(String(b.player)))}
+function headers(cols){$('thead').innerHTML='<tr>'+cols.map((c,i)=>`<th class="${i>2?'num':''}">${esc(c)}</th>`).join('')+'</tr>'}
+
+function initFactDropdowns(){
+ const metricSel=$('factMetric'),playerSel=$('factPlayers'),teamSel=$('factTeams');
+ const metricDrop=$('factMetricDropdown'),playerDrop=$('factPlayersDropdown'),teamDrop=$('factTeamsDropdown');
+ if(!metricSel||!playerSel||!teamSel||!metricDrop||!playerDrop||!teamDrop)return;
+ const metricsList=Object.entries(metrics).filter(([k,m])=>m.sum||m.rate||m.rating||m.average||m.derived);
+ const fill=(drop,items,placeholder)=>{
+  const current=drop.value;
+  drop.innerHTML=`<option value="">${placeholder}</option>`+items.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('');
+  if(items.some(([v])=>v===current))drop.value=current;
+ };
+ fill(metricDrop,metricsList.map(([k,m])=>[k,m.label||k]),'Choose a statistic…');
+ const season=+$('year').value||2026;
+ const seasonRows=raw.filter(r=>Number(r.season)===season);
+ const players=[...new Set(seasonRows.map(r=>r.player).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+ const teams=[...new Set(seasonRows.map(r=>r.team).filter(Boolean))].sort((a,b)=>teamName(a).localeCompare(teamName(b)));
+ const playerList=$('factPlayerNameOptions');
+ playerList.innerHTML=players.map(v=>`<option value="${esc(v)}"></option>`).join('');
+ playerDrop.value='';
+ fill(teamDrop,teams.map(v=>[v,teamName(v)]),'Choose a team…');
+ const sync=(select,drop,chipId,emptyText)=>{
+  const picked=[...select.options].filter(o=>o.selected);
+  $(chipId).innerHTML=picked.map(o=>`<span class="fact-chip"><span>${esc(o.textContent)}</span><button type="button" data-remove-fact="${esc(select.id)}" data-value="${esc(o.value)}" aria-label="Remove ${esc(o.textContent)}">×</button></span>`).join('');
+  $(chipId).querySelectorAll('[data-remove-fact]').forEach(btn=>btn.onclick=()=>{
+   const option=[...select.options].find(o=>o.value===btn.dataset.value);if(option)option.selected=false;
+   sync(select,drop,chipId,emptyText);renderFactGenerator();
+  });
+  if(select.id==='factPlayers')$('factPlayersHint').textContent=picked.length?`${picked.length} player(s) selected.`:emptyText;
+  if(select.id==='factTeams')$('factTeamsHint').textContent=picked.length?`${picked.length} team(s) selected.`:emptyText;
+  if(select.id==='factMetric')$('factMetricHint').textContent=picked.length?`${picked.length} statistic(s) selected.`:'Choose a statistic and press Add. Add as many as you need.';
+ };
+ const add=(drop,select,chipId,emptyText)=>{
+  const v=drop.value;if(!v)return;
+  let option=[...select.options].find(o=>o.value===v);
+  if(!option){option=new Option(drop.options[drop.selectedIndex].text,v);select.add(option)}
+  option.selected=true;drop.value='';
+  sync(select,drop,chipId,emptyText);renderFactGenerator();
+ };
+ $('addFactMetricBtn').onclick=()=>add(metricDrop,metricSel,'factMetricChips','');
+ $('addFactPlayerBtn').onclick=()=>{
+  const typed=playerDrop.value.trim();
+  if(!typed){$('factPlayersHint').textContent='Type a player name, then press Add.';return}
+  const seasonPlayers=[...playerList.options].map(o=>o.value);
+  const match=seasonPlayers.find(n=>n.toLocaleLowerCase()===typed.toLocaleLowerCase());
+  if(!match){$('factPlayersHint').textContent='Player not found in the loaded season. Try a name from the suggestions.';return}
+  let option=[...playerSel.options].find(o=>o.value===match);
+  if(!option){option=new Option(match,match);playerSel.add(option)}
+  option.selected=true;playerDrop.value='';
+  sync(playerSel,playerDrop,'factPlayersChips','Leave empty to include all players.');renderFactGenerator();
+ };
+ $('addFactTeamBtn').onclick=()=>add(teamDrop,teamSel,'factTeamsChips','Leave empty to include all teams.');
+ // Repaint chips after data refresh, retaining current selected values when still valid.
+ sync(metricSel,metricDrop,'factMetricChips','');
+ sync(playerSel,playerDrop,'factPlayersChips','Leave empty to include all players.');
+ sync(teamSel,teamDrop,'factTeamsChips','Leave empty to include all teams.');
+}
+function renderFactGeneratorForMetric(metricOverride){
+ const sel=$('factMetric');
+ if(!sel.options.length){sel.innerHTML=Object.entries(metrics).filter(([k,m])=>m.sum||m.rate||m.rating||m.average||m.derived).map(([k,m])=>`<option value="${k}">${esc(m.label)}</option>`).join('');}
+ const year=+$('year').value||2026,phase=$('phase').value,metric=metricOverride||sel.value||$('metric').value,count=+$('factCount').value||10;
+ const chosenPlayers=[...$('factPlayers').selectedOptions].map(o=>o.value); const chosenTeams=[...$('factTeams').selectedOptions].map(o=>o.value); const rows=filtered().filter(r=>Number(r.season)===year&&(!phase||phase==='all'||phase==='ALL'||String(r.season_type||'REG').toUpperCase()===String(phase).toUpperCase())&&selectedWeeks.includes(Number(r.week))&&(!chosenPlayers.length||chosenPlayers.includes(r.player))&&(!chosenTeams.length||chosenTeams.includes(r.team)));
+ const label=(metrics[metric]||{}).label||metric;
+ const groups=new Map();rows.forEach(r=>{const key=[r.player,r.team,r.position].join('|');if(!groups.has(key))groups.set(key,{player:r.player,team:r.team,position:r.position,rows:[]});groups.get(key).rows.push(r)});
+ const facts=[];
+ const aggregate=(rs,k)=>{const m=metrics[k]||{};if(k==='passer_rating')return passerRatingForRows(rs);if(k==='completion_pct'){const att=rs.reduce((a,r)=>a+num(r.attempts),0),cmp=rs.reduce((a,r)=>a+num(r.completions),0);return att?100*cmp/att:null}const vals=rs.map(r=>metricValue(r,k)).filter(v=>v!==null&&Number.isFinite(Number(v)));if(!vals.length)return null;if(m.average||m.rate||m.rating||m.derived){if(k==='pass_yards_per_attempt'){const att=rs.reduce((a,r)=>a+num(r.attempts),0),yards=rs.reduce((a,r)=>a+num(r.passing_yards),0);return att?yards/att:null}if(k==='rushing_yards_per_carry'){const c=rs.reduce((a,r)=>a+num(first(r,['carries','rushing_attempts'])),0),y=rs.reduce((a,r)=>a+num(r.rushing_yards),0);return c?y/c:null}if(k==='receiving_yards_per_catch'){const c=rs.reduce((a,r)=>a+num(r.receptions),0),y=rs.reduce((a,r)=>a+num(r.receiving_yards),0);return c?y/c:null}if(k==='catch_rate'){const t=rs.reduce((a,r)=>a+num(r.targets),0),c=rs.reduce((a,r)=>a+num(r.receptions),0);return t?100*c/t:null}if(k==='pass_td_pct'){const a=rs.reduce((x,r)=>x+num(r.attempts),0),t=rs.reduce((x,r)=>x+num(r.passing_tds),0);return a?100*t/a:null}if(k==='pass_int_pct'){const a=rs.reduce((x,r)=>x+num(r.attempts),0),t=rs.reduce((x,r)=>x+num(r.passing_interceptions),0);return a?100*t/a:null}if(k==='td_int_ratio'){const t=rs.reduce((x,r)=>x+num(r.passing_tds),0),i=rs.reduce((x,r)=>x+num(r.passing_interceptions),0);return i?t/i:(t>0?t:null)}return vals.reduce((a,b)=>a+Number(b),0)/vals.length}return vals.reduce((a,b)=>a+Number(b),0)};
+ const stats=[...groups.values()].map(g=>({...g,value:aggregate(g.rows,metric),games:new Set(g.rows.map(r=>r.week)).size})).filter(g=>g.value!==null&&Number.isFinite(g.value)).sort((a,b)=>b.value-a.value);
+ const meaningful=stats.filter(g=>g.value!==0);
+ const metricKind=(metrics[metric]||{}).average||(['completion_pct','pass_td_pct','pass_int_pct','catch_rate','pass_yards_per_attempt','rushing_yards_per_carry','receiving_yards_per_catch','td_int_ratio','passer_rating'].includes(metric))?'rate':'count';
+ if(meaningful.length){const top=meaningful.slice(0,Math.min(5,meaningful.length));top.forEach((g,i)=>facts.push({rank:i+1,text:`${g.player} (${teamName(g.team)}) led the selected players in ${label.toLowerCase()} with ${fmt(g.value,metric)}${metricKind==='rate'?'':' '+label.toLowerCase()}.`,detail:`${year} ${phase}; selected week(s): ${[...new Set(g.rows.map(r=>r.week))].sort((a,b)=>a-b).join(', ')}. ${g.games} week(s) with data.`}));if(meaningful.length>1){const lo=meaningful[meaningful.length-1];facts.push({text:`Among the selected players, ${lo.player} (${teamName(lo.team)}) had the lowest non-zero ${label.toLowerCase()} at ${fmt(lo.value,metric)}.`,detail:`Only compares players with available non-zero values for the selected filter.`});const avg=meaningful.reduce((s,g)=>s+g.value,0)/meaningful.length;facts.push({text:`The selected players averaged ${fmt(avg,metric)} for ${label.toLowerCase()}.`,detail:`Unweighted mean across ${meaningful.length} player/team entries; this is not a league-wide per-play efficiency rate.`});}}
+ const perWeek=new Map();rows.forEach(r=>{const w=Number(r.week),v=metricValue(r,metric);if(v===null||!Number.isFinite(Number(v)))return;const key=[r.player,r.team].join('|');if(!perWeek.has(w))perWeek.set(w,new Map());if(!perWeek.get(w).has(key))perWeek.get(w).set(key,{player:r.player,team:r.team,rows:[]});perWeek.get(w).get(key).rows.push(r)});
+ const weeklyLeaders=[...perWeek.entries()].map(([w,mp])=>({week:w,leaders:[...mp.values()].map(g=>({...g,value:aggregate(g.rows,metric)})).filter(g=>g.value!==null&&Number.isFinite(g.value)).sort((a,b)=>b.value-a.value)})).filter(x=>x.leaders.length).sort((a,b)=>a.week-b.week);
+ weeklyLeaders.forEach(w=>{const g=w.leaders[0];facts.push({text:`Week ${w.week}: ${g.player} (${teamName(g.team)}) was the top performer in ${label.toLowerCase()} at ${fmt(g.value,metric)}.`,detail:`Highest available player value in Week ${w.week} under the selected season, phase, team and player filters.`})});
+ if(weeklyLeaders.length>1){const firstW=weeklyLeaders[0],lastW=weeklyLeaders[weeklyLeaders.length-1],firstG=firstW.leaders[0],lastG=lastW.leaders[0];facts.push({text:`The Week ${firstW.week} leader posted ${fmt(firstG.value,metric)}, compared with ${fmt(lastG.value,metric)} for the Week ${lastW.week} leader in Week ${lastW.week}.`,detail:`These are each week's leaders, not necessarily the same player; use as a week-by-week snapshot rather than a player trend.`})}
+ // Add player-level observations so the requested fact count can be met
+ // even when there are few distinct weekly leaders.
+ const existingFactTexts = new Set(facts.map(f => f.text));
+ const lowToHigh = [...stats].sort((a,b)=>a.value-b.value);
+ const highToLow = [...stats].sort((a,b)=>b.value-a.value);
+ const factName = (g) => `${g.player} (${teamName(g.team)})`;
+ const factValue = (g) => fmt(g.value, metric);
+ const lowLabel = label.toLowerCase();
+ for (const g of lowToHigh) {
+   if (facts.length >= count) break;
+   const text = metric === 'pass_yards_per_attempt'
+     ? `${factName(g)} averaged ${factValue(g)} per pass attempt, a low mark among the selected players.`
+     : `${factName(g)} recorded just ${factValue(g)} in ${lowLabel}, the lowest available mark among the selected players.`;
+   if (!existingFactTexts.has(text)) {
+     facts.push({text, detail:`Low-end result for ${year} ${phase}, using the selected weeks and filters.`});
+     existingFactTexts.add(text);
+   }
+ }
+ for (const g of highToLow) {
+   if (facts.length >= count) break;
+   const text = `${factName(g)} recorded ${factValue(g)} in ${lowLabel} across the selected weeks.`;
+   if (!existingFactTexts.has(text)) {
+     facts.push({text, detail:`Player-level result from the loaded CSV for ${year} ${phase}.`});
+     existingFactTexts.add(text);
+   }
+ }
+ const filteredFacts=facts.slice(0,count);
+ $('factNotice').textContent=`Using ${rows.length.toLocaleString()} loaded player-week rows for ${year} (${phase}), weeks ${selectedWeeks.length?selectedWeeks.join(', '):'none'}. ${filteredFacts.length} fact(s) generated. Facts include leaderboards, low marks, averages and weekly leaders where the selected data supports them. Values come from the loaded CSV; check context before publishing. Blank or untracked metric values are excluded and can mean partial coverage; a dash means unavailable, while numeric 0 is retained as a reported zero.`;
+ $('factContent').innerHTML=filteredFacts.length?`<ol>${filteredFacts.map(f=>`<li style="margin:12px 0"><b>${esc(f.text)}</b><div class="small muted">${esc(f.detail)}</div></li>`).join('')}</ol>`:'<p class="muted">No facts found. Check that the season, phase and week selection match the loaded data.</p>';
+ window.generatedNFLFacts=filteredFacts.map(f=>f.text+' — '+f.detail);
+}
+function buildContentPack(){
+ const facts=(window.generatedNFLFacts||[]).map(x=>String(x).replace(/^\[[^\]]+\]\s*/,'').split(' — ')[0].trim()).filter(Boolean);
+ const notice=$('contentStudioNotice'),output=$('contentPackOutput');
+ if(!facts.length){notice.textContent='Generate facts first. Check the season, phase and week selection.';output.value='';return;}
+ const year=+$('year').value||2026,phase=$('phase').value||'REG';
+ const phaseLabel=phase==='ALL'?'Regular season + playoffs':phase==='POST'?'Playoffs':'Regular season';
+ const weeks=(Array.isArray(selectedWeeks)?selectedWeeks:[]).slice().sort((a,b)=>a-b);
+ const scope=year+' · '+phaseLabel+' · Weeks '+(weeks.length?weeks.join(', '):'as selected in the dashboard');
+ const metricOptions=[...$('factMetric').selectedOptions].map(o=>o.textContent.trim()).filter(Boolean);
+ const metricLabel=metricOptions.length?metricOptions.join(', '):(($('metric').selectedOptions[0]||{}).textContent||'selected statistic').trim();
+ const evidence=facts.slice(0,5).map((f,i)=>(i+1)+'. '+f).join('\n');
+ const lead=facts[0];
+ const common='DATA SCOPE\n'+scope+'\nStatistics: '+metricLabel+'\n\nDATA CHECK\nThese draft lines were generated from the player-week CSV currently loaded in the dashboard. Confirm the numbers, spelling and selected filters before publishing. No external quotes, injury reports or breaking-news claims have been added.';
+ let pack='';
+ const format=$('contentPackFormat').value;
+ if(format==='social'){
+  pack='ALEXMYRUSTALKSSPORTS · SOCIAL CONTENT PACK\n\nPOST HOOK\nOne number from the selected NFL data stands out: '+lead+'\n\nCAPTION DRAFT\nThe numbers tell an interesting story. '+facts.slice(0,3).join(' ')+'\n\nCAROUSEL / GRAPHIC SLIDES\n'+facts.slice(0,5).map((f,i)=>'Slide '+(i+1)+': '+f).join('\n')+'\n\nCALL TO ACTION\nWhich stat should we break down next? Share your pick.\n\nHASHTAGS\n#NFL #NFLStats #FootballAnalytics #AlexMyrusTalksSports\n\n'+common;
+ }else if(format==='stories'){
+  const ideas=[
+   'Leaderboard spotlight: Build the hook around this supported finding — '+facts[0]+'. Check the runner-up and exact gap in the CSV before recording.',
+   'Week-by-week change: Compare the weekly leaders for '+metricLabel+' across the selected weeks. Verify whether the same player leads repeatedly or the leader changes.',
+   'Opportunity versus output: Pair this statistic with attempts, targets or another relevant opportunity metric where those fields exist.',
+   'Consistency check: Identify who appears most often among the weekly leaders under the same filters, then show both strong and ordinary weeks.',
+   'Context before conclusion: Re-run the comparison with a different week range or phase and explain whether the finding changes.'
+  ];
+  pack='ALEXMYRUSTALKSSPORTS · WEEKLY NFL STORY IDEAS\n\nSCOPE\n'+scope+'\n\nSTORY IDEAS TO RESEARCH\n'+ideas.map((idea,i)=>(i+1)+'. '+idea).join('\n')+'\n\nEDITORIAL CHECKLIST\nUse the loaded CSV to verify rankings, sample sizes and exact gaps. These are angles to investigate, not claims that have already been proven. Do not infer causation, injuries or quotes from these stats alone.\n\n'+common;
+ }else if(format==='research'){
+  pack='ALEXMYRUSTALKSSPORTS · VIDEO RESEARCH OUTLINE\n\nWORKING TITLE\nThe numbers behind '+metricLabel.toLowerCase()+' in '+year+'\n\nCENTRAL QUESTION\nWhat does the selected data actually show, and what context would a viewer need to interpret it fairly?\n\nOPENING HOOK\n'+lead+'\n\nEVIDENCE FROM THE SELECTED DATA\n'+evidence+'\n\nSEQUENCE\n1. Define the statistic and the selected season / weeks.\n2. Show the strongest supported finding from the data.\n3. Compare the other listed findings without implying causation.\n4. Check context that this CSV cannot establish, such as role, opponent quality or game situation.\n5. Close with the most defensible conclusion and a question for viewers.\n\nFOLLOW-UP RESEARCH TO DO\nVerify all figures against the source CSV; independently source any quotes or contextual claims before using them. Do not infer injuries, motives or causation from this dataset alone.\n\n'+common;
+ }else{
+  pack='ALEXMYRUSTALKSSPORTS · SHORT-FORM VIDEO SCRIPT\n\nWORKING TITLE\nThe '+year+' NFL stat story: '+metricLabel+'\n\n0–3s · HOOK\n'+lead+'\n\n3–10s · CONTEXT\n“Here’s what the selected '+year+' data shows for '+metricLabel.toLowerCase()+'. We’re looking at '+phaseLabel.toLowerCase()+' games and the weeks listed below.”\n\n10–30s · EVIDENCE\n'+evidence+'\n\n30–38s · IMPORTANT CONTEXT\n“These are descriptive stats from the chosen filters, not proof of why a player performed this way. Check the sample size and game context.”\n\n38–45s · CLOSE\n“Which player or stat should we examine next? Follow AlexMyrusTalksSports for more data-led NFL breakdowns.”\n\nON-SCREEN TEXT\n'+metricLabel+' · '+year+' · '+(weeks.length?'Weeks '+weeks.join(', '):'Selected weeks')+'\n\nSOCIAL CAPTION\n'+facts.slice(0,2).join(' ')+' More data-led NFL breakdowns from AlexMyrusTalksSports. #NFL #NFLStats\n\n'+common;
+ }
+ output.value=pack;
+ notice.textContent='Content pack built from '+facts.length+' generated fact line(s). Review and edit before publishing; figures have not been independently checked beyond the loaded dataset.';
+}
+function gameVideoGames(rows,season,weekNumber){return rows.map((game,index)=>({game,index})).filter(x=>num(first(x.game,['season','year']))===Number(season)&&num(first(x.game,['week','week_number']))===Number(weekNumber)).sort((a,b)=>String(first(a.game,['gameday'])||'').localeCompare(String(first(b.game,['gameday'])||''))||a.index-b.index)}
+function gameVideoWeeks(rows,season){return [...new Set(rows.filter(g=>num(first(g,['season','year']))===Number(season)).map(g=>num(first(g,['week','week_number']))).filter(Boolean))].sort((a,b)=>a-b)}
+function populateGameVideoSelectors(){if(!$('videoSeason'))return;const seasons=[...new Set(scheduleRows.map(g=>num(first(g,['season','year']))).filter(Boolean))].sort((a,b)=>b-a),current=+$('videoSeason').value; $('videoSeason').innerHTML=seasons.map(y=>`<option value="${y}">${y}</option>`).join('');$('videoSeason').value=seasons.includes(current)?String(current):String(seasons[0]||'');populateGameVideoWeeks()}
+function populateGameVideoWeeks(){const weeks=gameVideoWeeks(scheduleRows,+$('videoSeason').value),current=+$('videoWeek').value;$('videoWeek').innerHTML=weeks.map(w=>`<option value="${w}">Week ${w}</option>`).join('');$('videoWeek').value=weeks.includes(current)?String(current):String(weeks[0]||'');populateGameVideoGames()}
+function populateGameVideoGames(){const choices=gameVideoGames(scheduleRows,+$('videoSeason').value,+$('videoWeek').value),select=$('videoGame');select.innerHTML=choices.length?choices.map(x=>{const z=gameTeams(x.game),day=first(x.game,['gameday','date'])||'Date unavailable',teams=teamName(z.away)+' at '+teamName(z.home);return `<option value="${x.index}">${esc(day)} · ${esc(teams)}</option>`}).join(''):'<option value="">No games for this week</option>';}
+function gameDateLabel(g){const date=first(g,['gameday','date']);return date?String(date):'Date unavailable in schedule data'}
+function gameVideoRecord(team,season,weekNumber,includeTarget){const games=scheduleRows.filter(g=>num(first(g,['season','year']))===Number(season)&&num(first(g,['week','week_number']))<=(Number(weekNumber)-(includeTarget?0:1))&&completedGame(g)&&isRegularSeasonGame(g)&&[gameTeams(g).home,gameTeams(g).away].includes(team)).sort((a,b)=>num(first(a,['week']))-num(first(b,['week'])));let w=0,l=0,t=0;const results=[];games.forEach(g=>{const z=gameTeams(g),forTeam=z.home===team?+z.hs:+z.as,against=z.home===team?+z.as:+z.hs;if(forTeam>against){w++;results.push('W')}else if(forTeam<against){l++;results.push('L')}else{t++;results.push('T')}});return {w,l,t,games,results}}
+function gameVideoPlayers(team,season,weekNumber,mode){const cutoff=mode==='POST'?Number(weekNumber):Number(weekNumber)-1,eligible=raw.filter(r=>Number(r.season)===Number(season)&&Number(r.week)<=cutoff&&r.team===team),byPlayer=new Map();eligible.forEach(r=>{if(!byPlayer.has(r.player))byPlayer.set(r.player,[]);byPlayer.get(r.player).push(r)});return [...byPlayer.entries()].map(([player,rows])=>{const points=rows.reduce((sum,r)=>sum+(metricValue(r,'standard_fantasy_points')||0),0),weekPoints=rows.filter(r=>Number(r.week)===Number(weekNumber)).reduce((sum,r)=>sum+(metricValue(r,'standard_fantasy_points')||0),0);return {player,points,weekPoints,rows:rows.length}}).filter(p=>p.rows>0).sort((a,b)=>(mode==='POST'?b.weekPoints-a.weekPoints:b.points-a.points)||a.player.localeCompare(b.player)).slice(0,3)}
+function gameVideoTurningPoints(game,rows){const id=String(first(game,['game_id','old_game_id']));if(!id)return[];return rows.filter(play=>String(first(play,['game_id']))===id&&first(play,['desc','description'])&&Number.isFinite(Number(first(play,['wpa','win_probability_added'])))).sort((a,b)=>Math.abs(Number(first(b,['wpa','win_probability_added'])))-Math.abs(Number(first(a,['wpa','win_probability_added'])))).slice(0,2).map(play=>{const qtr=first(play,['qtr','quarter']),time=first(play,['time']),description=String(first(play,['desc','description'])).replace(/\s+/g,' ').trim().slice(0,220),wpa=Number(first(play,['wpa','win_probability_added']));return `${qtr?`Q${qtr}`:'Quarter unavailable'}${time?` ${time}`:''}: ${description} (WPA ${wpa>0?'+':''}${wpa.toFixed(3)})`})}
+async function loadGameVideoPlayByPlay(season){if(gamePbpYear===Number(season)&&gamePbpRows.length)return gamePbpRows;const response=await fetch(`./data/play_by_play_${season}.csv.gz?v=${Date.now()}`);if(!response.ok)throw Error(`play-by-play HTTP ${response.status}`);if(typeof DecompressionStream!=='function')throw Error('gzip decompression is unavailable in this browser');const stream=new Blob([await response.arrayBuffer()]).stream().pipeThrough(new DecompressionStream('gzip'));gamePbpRows=parseCSV(await new Response(stream).text());gamePbpYear=Number(season);return gamePbpRows}
+function buildGameVideoScript(game,mode,season,weekNumber,duration,platform,turningPoints=[]){const z=gameTeams(game),home=teamName(z.home),away=teamName(z.away),done=completedGame(game),date=gameDateLabel(game),venue=first(game,['stadium','venue'])||'Venue unavailable in schedule data',kickoff=first(game,['gametime']),kickoffText=kickoff?`${kickoff} ET`:'Kickoff time unavailable in schedule data',targetWeek=Number(weekNumber),lines=[],homeRecord=gameVideoRecord(z.home,season,targetWeek,mode==='POST'),awayRecord=gameVideoRecord(z.away,season,targetWeek,mode==='POST'),recordText=r=>`${r.w}-${r.l}-${r.t}`;
+ lines.push(`ALEXMYRUSTALKSSPORTS · ${mode==='PRE'?'PRE-GAME':'POST-GAME'} · ${duration}s · ${platform}`,`GAME: ${away} at ${home} · ${season} Week ${targetWeek}`,`DATE / KICKOFF: ${date} · ${kickoffText}${venue==='Venue unavailable in schedule data'?'':` · ${venue}`}`,'');
+ if(mode==='PRE'){
+  const recentText=r=>r.results.length?`last ${Math.min(3,r.results.length)} games ${r.results.slice(-3).join('-')}`:'unavailable';lines.push('0–4s · HOOK',`“${away} at ${home} — here’s the matchup and the details that could decide it.”`,'',`4–12s · MATCHUP + FORM`,`“${away} visit ${home}. Current completed regular-season records before this game: ${away} ${recordText(awayRecord)}; ${home} ${recordText(homeRecord)}. Recent form: ${away} ${recentText(awayRecord)}; ${home} ${recentText(homeRecord)}.”`,'');
+  lines.push('12–22s · PLAYERS + STORYLINES');[z.away,z.home].forEach(team=>{const players=gameVideoPlayers(team,season,targetWeek,'PRE');lines.push(`${teamName(team)}: ${players.length?players.map(p=>`${p.player} (${p.points.toFixed(1)} standard fantasy points across loaded weeks)`).join('; '):'Key-player statistics unavailable in the loaded player-week data.'}`)});lines.push('');
+  const prior=scheduleRows.filter(g=>{const q=gameTeams(g),same=(q.home===z.home&&q.away===z.away)||(q.home===z.away&&q.away===z.home);return same&&completedGame(g)&&(num(first(g,['season','year']))<Number(season)||(num(first(g,['season','year']))===Number(season)&&num(first(g,['week']))<targetWeek))}).sort((a,b)=>num(first(b,['season','year']))-num(first(a,['season','year']))||num(first(b,['week']))-num(first(a,['week'])))[0];
+  if(prior){const q=gameTeams(prior),winner=+q.hs>+q.as?teamName(q.home):+q.as>+q.hs?teamName(q.away):'Tie';lines.push('22–34s · LAST HEAD-TO-HEAD',`“Last completed meeting in the available schedule: ${teamName(q.away)} ${q.as}, ${teamName(q.home)} ${q.hs} (${first(prior,['season','year'])} Week ${first(prior,['week'])}); ${winner==='Tie'?'it finished tied':winner+' won'}.”`,'')}else lines.push('22–34s · LAST HEAD-TO-HEAD','“Previous head-to-head result unavailable in the schedule data.”','');
+  lines.push('34–48s · WHAT TO WATCH',`“Watch how each side’s recent form and its featured players’ production carry into this matchup. The schedule and player-week data do not include verified tactical or injury details, so those are unavailable here.”`,'48–60s · PICK + REASON',`“Data-only pick: ${homeRecord.w+homeRecord.t/2>awayRecord.w+awayRecord.t/2?home:awayRecord.w+awayRecord.t/2>homeRecord.w+homeRecord.t/2?away:'No clear edge'} based on completed-season win records (${away} ${recordText(awayRecord)}, ${home} ${recordText(homeRecord)}). This is a simple record comparison, not a model forecast.”`,'');
+ }else{
+  if(done){const winner=+z.hs>+z.as?home:+z.as>+z.hs?away:'Tie';lines.push('0–5s · FINAL',`“Final: ${away} ${z.as}, ${home} ${z.hs}. ${winner==='Tie'?'The game ended in a tie.':winner+' take the win.'}”`,'')}else lines.push('0–5s · RESULT','“Final score unavailable: this schedule entry does not include a completed result.”','');
+  lines.push('5–18s · TURNING POINTS',turningPoints.length?`“Largest win-probability swings in the play-by-play data: ${turningPoints.join('; ')}.”`:'“Play-by-play turning points are unavailable: this game has no usable win-probability play data.”','18–32s · STANDOUT PERFORMANCES');[z.away,z.home].forEach(team=>{const players=gameVideoPlayers(team,season,targetWeek,'POST');lines.push(`${teamName(team)}: ${players.length?players.map(p=>`${p.player} (${p.weekPoints.toFixed(1)} standard fantasy points)`).join('; '):'Player performances unavailable in the loaded player-week data.'}`)});lines.push('');
+  lines.push('32–46s · RECAP + IMPLICATIONS',done?`“${away} finish ${recordText(awayRecord)} and ${home} finish ${recordText(homeRecord)} in the completed regular-season schedule data. These records are calculated from completed games available in the feed.”`:'“Records and standings implications are unavailable until the schedule records a final score.”','');
+  const next=scheduleRows.filter(g=>{const q=gameTeams(g),same=(q.home===z.home&&q.away===z.away)||(q.home===z.away&&q.away===z.home),later=num(first(g,['season','year']))>Number(season)||(num(first(g,['season','year']))===Number(season)&&num(first(g,['week']))>targetWeek);return same&&later}).sort((a,b)=>num(first(a,['season','year']))-num(first(b,['season','year']))||num(first(a,['week']))-num(first(b,['week'])))[0];
+  lines.push('46–60s · NEXT MEETING',next?`“Next meeting listed in the schedule: ${gameDateLabel(next)}, ${first(next,['season','year'])} Week ${first(next,['week'])}.”`:'“No next meeting is listed in the available schedule data; a rematch date is not scheduled or is unknown.”','');
+ }
+ lines.push(`ON-SCREEN / CAPTION: ${away} at ${home} · ${season} Week ${targetWeek} · ${mode==='PRE'?'Preview':'Recap'}`,`DATA NOTE: Schedule feed plus loaded player-week CSV. Any unavailable item is labeled above.`);return lines.map(line=>line.replace(/^(\d+)–(\d+)s ·/,(_,start,end)=>`${Math.round(Number(start)*duration/60)}–${Math.round(Number(end)*duration/60)}s ·`)).join('\n')}
+async function generateGameVideo(){const game=scheduleRows[Number($('videoGame').value)],notice=$('gameVideoNotice'),output=$('gameVideoOutput');if(!game){notice.textContent='Choose a scheduled game first. Schedule data may be unavailable.';output.value='';return}const mode=$('videoMode').value,season=+$('videoSeason').value,weekNumber=+$('videoWeek').value;let turningPoints=[];if(mode==='POST'){notice.textContent='Loading this season’s play-by-play so the recap can include supported turning points…';try{turningPoints=gameVideoTurningPoints(game,await loadGameVideoPlayByPlay(season))}catch(error){turningPoints=[]}}output.value=buildGameVideoScript(game,mode,season,weekNumber,+$('videoDuration').value,$('videoPlatform').value,turningPoints);notice.textContent=`${mode==='PRE'?'Pre-game preview':'Post-game recap'} generated from the schedule, loaded player-week statistics${mode==='POST'?' and play-by-play data':''}. The script is editable; verify it before publishing.`}
+function downloadFactCard(){
+ const facts=(window.generatedNFLFacts||[]).map(x=>String(x).replace(/^\[[^\]]+\]\s*/,'').split(' — ')[0].trim()).filter(Boolean).slice(0,5);
+ const notice=$('contentStudioNotice');
+ if(!facts.length){notice.textContent='Generate facts first, then download the graphic.';return;}
+ const canvas=$('factCardCanvas'),ctx=canvas.getContext('2d');
+ if(!ctx){notice.textContent='Canvas export is not supported in this browser.';return;}
+ const year=+$('year').value||2026,phase=$('phase').value||'REG';
+ const phaseLabel=phase==='ALL'?'REGULAR + PLAYOFFS':phase==='POST'?'PLAYOFFS':'REGULAR SEASON';
+ const weeks=(Array.isArray(selectedWeeks)?selectedWeeks:[]).slice().sort((a,b)=>a-b);
+ ctx.fillStyle='#09111a';ctx.fillRect(0,0,1080,1350);
+ const glow=ctx.createLinearGradient(0,0,1080,1350);glow.addColorStop(0,'#17374a');glow.addColorStop(1,'#09111a');ctx.fillStyle=glow;ctx.fillRect(0,0,1080,1350);
+ ctx.fillStyle='#71d6b3';ctx.fillRect(70,76,940,8);
+ ctx.fillStyle='#71d6b3';ctx.font='800 26px system-ui, sans-serif';ctx.fillText('ALEXMYRUSTALKSSPORTS',72,130);
+ const metricCount=[...$('factMetric').selectedOptions].length;const cardHeading=metricCount===1?'NFL STAT LEADERBOARD':'NFL STAT SNAPSHOT';ctx.fillStyle='#eef5fa';ctx.font='900 52px system-ui, sans-serif';ctx.fillText(cardHeading,72,208);
+ ctx.fillStyle='#9db0bf';ctx.font='600 23px system-ui, sans-serif';ctx.fillText(year+' · '+phaseLabel,72,258);
+ ctx.font='500 20px system-ui, sans-serif';ctx.fillText('Weeks: '+(weeks.length?weeks.join(', '):'selected dashboard weeks'),72,294);
+ function wrap(text,x,y,maxWidth,lineHeight,maxLines){
+  const words=String(text).split(/\s+/);let line='',lines=0;
+  for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){ctx.fillText(line,x,y);y+=lineHeight;lines++;line=word;if(lines>=maxLines){ctx.fillText('…',x+ctx.measureText(line).width,y);return y+lineHeight;}}else line=test;}
+  if(line&&lines<maxLines){ctx.fillText(line,x,y);y+=lineHeight;}
+  return y;
+ }
+ const top=350,boxH=174,boxGap=20;
+ facts.forEach((fact,i)=>{
+  const y=top+i*(boxH+boxGap);
+  ctx.fillStyle='rgba(9,23,34,0.88)';ctx.fillRect(60,y,960,boxH);
+  ctx.fillStyle='#71d6b3';ctx.font='800 22px system-ui, sans-serif';ctx.fillText('FINDING '+(i+1),88,y+40);
+  ctx.fillStyle='#eef5fa';ctx.font='600 25px system-ui, sans-serif';wrap(fact,88,y+82,900,32,3);
+ });
+ ctx.fillStyle='#9db0bf';ctx.font='500 16px system-ui, sans-serif';ctx.fillText('Source: selected player-week CSV · Verify scope and figures before publishing',72,1310);
+ canvas.toBlob(blob=>{
+  if(!blob){notice.textContent='Could not export the graphic. Try another browser.';return;}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='nfl-stat-snapshot-'+year+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  notice.textContent='Fact-card PNG exported. Review the graphic and verify the figures before posting.';
+ },'image/png');
+}
+function renderFactGenerator(){
+ initFactDropdowns();
+ const sel=$('factMetric');
+ if(!sel.options.length){
+  sel.innerHTML=Object.entries(metrics).filter(([k,m])=>m.sum||m.rate||m.rating||m.average||m.derived).map(([k,m])=>`<option value="${k}">${esc(m.label)}</option>`).join('');
+ }
+ const selected=[...sel.selectedOptions].map(o=>o.value);
+ const chosen=selected.length?selected:[(sel.options[0]||{}).value].filter(Boolean);
+ if(!chosen.length){$('factNotice').textContent='Choose at least one statistic.';$('factContent').innerHTML='';window.generatedNFLFacts=[];return;}
+ const requested=+$('factCount').value||10;
+ const panels=[];
+ const factsByMetric=[];
+ let totalRows=0;
+ for(const metric of chosen){
+  renderFactGeneratorForMetric(metric);
+  const label=(metrics[metric]||{}).label||metric;
+  const match=$('factNotice').textContent.match(/Using ([\d,]+) loaded player-week rows/);
+  if(match) totalRows=Math.max(totalRows,Number(match[1].replace(/,/g,'')));
+  factsByMetric.push({metric,label,facts:(window.generatedNFLFacts||[]).map(line=>({line,metric,label}))});
+ }
+ // The selected count is the total across all selected statistics, not per statistic.
+ const allFacts=[];
+ let cursor=0;
+ while(allFacts.length<requested){
+   let added=false;
+   for(const group of factsByMetric){
+     if(cursor<group.facts.length && allFacts.length<requested){
+       const item=group.facts[cursor];
+       allFacts.push({text:`[${item.label}] ${item.line}`,label:item.label});
+       added=true;
+     }
+   }
+   if(!added) break;
+   cursor++;
+ }
+ const byLabel=new Map();
+ for(const item of allFacts){
+   if(!byLabel.has(item.label)) byLabel.set(item.label,[]);
+   byLabel.get(item.label).push(item.text.replace(`[${item.label}] `,''));
+ }
+ for(const [label,items] of byLabel){
+   panels.push(`<h3 style="margin-top:18px">${esc(label)}</h3><ol>${items.map(t=>`<li style="margin:12px 0"><b>${esc(t.split(' — ')[0])}</b>${t.includes(' — ')?`<div class="small muted">${esc(t.split(' — ').slice(1).join(' — '))}</div>`:''}</li>`).join('')}</ol>`);
+ }
+ $('factContent').innerHTML=panels.join('');
+ $('factNotice').textContent=`Selected ${chosen.length} statistic(s). Generated ${allFacts.length} of ${requested} requested facts across those statistics. ${totalRows.toLocaleString()} player-week rows available under the current filters.`;
+ window.generatedNFLFacts=allFacts.map(f=>f.text);
+}
+
+const TEAM_STAT_LABELS={
+ points_scored_per_game:'Points scored per game',points_allowed_per_game:'Points allowed per game',point_differential:'Point differential',
+ offensive_yards_per_game:'Total yards per game',yards_allowed_per_game:'Yards allowed per game',yards_per_play:'Yards per play',
+ turnover_differential:'Turnover differential',third_down_pct:'Third-down conversion %',third_down_pct_allowed:'Third-down % allowed',fourth_down_conversions:'Fourth-down conversions',fourth_down_attempts:'Fourth-down attempts',fourth_down_pct:'Fourth-down conversion %',fourth_down_attempts_allowed:'Fourth-down attempts allowed',fourth_down_stops:'Fourth-down stops (defence)',
+ red_zone_td_pct:'Red-zone TD %',red_zone_td_pct_allowed:'Red-zone TD % allowed',offensive_red_zone_turnovers:'Offensive red-zone turnovers',defensive_red_zone_turnovers:'Defensive red-zone turnovers forced',time_of_possession_seconds:'Time of possession',
+ flags_thrown_for:'Flags thrown for (opponent penalised)',flags_thrown_against:'Flags thrown against (team penalised)',penalty_yards_for:'Penalty yards for (opponent penalised)',penalty_yards_against:'Penalty yards against (team penalised)',penalties:'Penalties against',penalty_yards:'Penalty yards against',explosive_plays_20_plus:'Explosive plays (20+ yards)',
+ longest_play_td:'Longest touchdown play',longest_play_non_td:'Longest non-touchdown play',longest_play:'Longest play overall'
+};
+function formatTeamStat(v,k){
+ if(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))return '—';
+ if(k==='time_of_possession_seconds'){const s=Math.max(0,Math.round(Number(v)));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+ if(k.includes('_pct'))return Number(v).toFixed(1)+'%';
+ if(['points_scored_per_game','points_allowed_per_game','offensive_yards_per_game','yards_allowed_per_game','yards_per_play'].includes(k))return Number(v).toFixed(1);
+ return Number(v).toLocaleString('en-GB',{maximumFractionDigits:1});
+}
+async function loadTeamStats(){
+ try{
+  const y=+$('year').value||2026;
+  const res=await fetch('./data/stats_team_week_'+y+'.csv?v='+Date.now(),{cache:'no-store'});
+  if(!res.ok)throw Error('HTTP '+res.status);
+  teamStatRows=parseCSV(await res.text());
+  const teams=[...new Set(teamStatRows.map(r=>r.team).filter(Boolean))].sort();
+  $('teamStatsTeam').innerHTML='<option value="">All teams</option>'+teams.map(t=>'<option value="'+esc(t)+'">'+esc(teamName(t))+'</option>').join('');
+  $('teamStatsNote').textContent='Loaded '+teamStatRows.length+' team-week rows for '+y+'. Select weeks above to aggregate across the chosen games.';
+ }catch(e){
+  teamStatRows=[];
+  $('teamStatsNote').textContent='Team statistics are not available for '+$('year').value+' yet ('+e.message+'). Check the GitHub Actions run and confirm data/stats_team_week_'+$('year').value+'.csv was generated.';
+ }
+}
+function renderTeamStats(){
+ const y=+$('year').value||2026,k=$('teamStatMetric').value||'points_scored_per_game',phase=$('teamStatsPhase').value||'REG',team=$('teamStatsTeam').value;
+ const selected=new Set(selectedWeeks);
+ let rows=teamStatRows.filter(r=>Number(r.season)===y&&(phase==='ALL'||String(r.season_type).toUpperCase()===phase)&&selected.has(Number(r.week))&&(!team||r.team===team));
+ const grouped=new Map();
+ for(const r of rows){if(!grouped.has(r.team))grouped.set(r.team,[]);grouped.get(r.team).push(r)}
+ const data=[...grouped.entries()].map(([tm,rs])=>{
+  const total=key=>rs.reduce((s,r)=>s+(r[key]===''?0:Number(r[key]||0)),0);
+  const games=rs.reduce((s,r)=>s+Number(r.games_played||0),0);
+  let value;
+  if(k==='points_scored_per_game')value=games?total('points_scored')/games:null;
+  else if(k==='points_allowed_per_game')value=games?total('points_allowed')/games:null;
+  else if(k==='offensive_yards_per_game')value=games?total('offensive_yards')/games:null;
+  else if(k==='yards_allowed_per_game')value=games?total('yards_allowed')/games:null;
+  else if(k==='point_differential')value=total('points_scored')-total('points_allowed');
+  else if(k==='yards_per_play')value=rs.reduce((s,r)=>s+Number(r.yards_per_play||0)*Number(r.offensive_plays||0),0)/Math.max(1,rs.reduce((s,r)=>s+Number(r.offensive_plays||0),0));
+  else if(k==='third_down_pct')value=total('third_down_attempts')?100*total('third_down_conversions')/total('third_down_attempts'):null;
+  else if(k==='fourth_down_conversions')value=total('fourth_down_conversions');
+  else if(k==='fourth_down_attempts')value=total('fourth_down_attempts');
+  else if(k==='fourth_down_attempts_allowed')value=total('fourth_down_attempts_allowed');
+  else if(k==='fourth_down_stops')value=total('fourth_down_stops');
+  else if(k==='fourth_down_pct')value=total('fourth_down_attempts')?100*total('fourth_down_conversions')/total('fourth_down_attempts'):null;
+  else if(k==='third_down_pct_allowed')value=total('third_down_pct_allowed')/rs.length;
+  else if(k==='red_zone_td_pct')value=total('red_zone_trips')?100*total('red_zone_tds')/total('red_zone_trips'):null;
+  else if(k==='red_zone_td_pct_allowed')value=total('red_zone_td_pct_allowed')/rs.length;
+  else if(k==='offensive_red_zone_turnovers')value=total('offensive_red_zone_turnovers');
+  else if(k==='defensive_red_zone_turnovers')value=total('defensive_red_zone_turnovers');
+  else if(k==='time_of_possession_seconds')value=total(k);
+  else if(k==='turnover_differential')value=total(k);
+  else value=total(k);
+  return {team:tm,games,value};
+ }).filter(r=>r.value!==null&&Number.isFinite(r.value)).sort((a,b)=>b.value-a.value);
+ if(['points_allowed_per_game','yards_allowed_per_game','third_down_pct_allowed','red_zone_td_pct_allowed','flags_thrown_against','penalty_yards_against','penalties','penalty_yards'].includes(k))data.sort((a,b)=>a.value-b.value);
+ $('teamStatsHead').innerHTML='<tr><th>Rank</th><th>Team</th><th class="num">Games</th><th class="num">'+esc(TEAM_STAT_LABELS[k]||k)+'</th></tr>';
+ $('teamStatsBody').innerHTML=data.map((r,i)=>'<tr><td class="rank">'+(i+1)+'</td><td><b>'+esc(teamName(r.team))+'</b></td><td class="num">'+r.games+'</td><td class="num"><b>'+formatTeamStat(r.value,k)+'</b></td></tr>').join('')||'<tr><td colspan="4" class="muted">No team data for this season, phase and week selection.</td></tr>';
+ if(teamStatRows.length)$('teamStatsNote').textContent='Showing '+data.length+' teams · '+selectedWeeks.length+' selected week(s). Team stats are sourced from the automatically generated weekly team CSV.';
+}
+
+function render(){const compare=view==='playercompare',teamcompare=view==='teamcompare',teamstats=view==='teamstats',factgen=view==='factgen';$('leaguePanel').classList.add('hidden');$('bracketPanel').classList.add('hidden');$('teamStatsPanel').classList.toggle('hidden',!teamstats);$('factPanel').classList.toggle('hidden',!factgen);$('calendarPanel').classList.toggle('hidden',view!=='calendar');$('mainPanel').classList.toggle('hidden',compare||teamcompare||teamstats||factgen);$('comparePanel').classList.toggle('hidden',!compare);$('teamComparePanel').classList.toggle('hidden',!teamcompare);if(compare){renderPlayerCompare();return}if(teamcompare){renderTeamCompare();return}if(teamstats){renderTeamStats();return}if(factgen){renderFactGenerator();return}if(!raw.length)return;const k=$('metric').value,label=metrics[k].label;let data=sortData(currentData());if(view==='team'){const map=new Map();filtered().filter(r=>selectedWeeks.includes(r.week)).forEach(r=>{if(!map.has(r.team))map.set(r.team,[]);map.get(r.team).push(r)});data=[...map.entries()].map(([team,rs])=>{const o={player:team,team,position:'TEAM',rows:rs};for(const [mk,m] of Object.entries(metrics)){const vals=rs.map(r=>metricValue(r,mk)).filter(v=>v!==null);if(m.rate){const a=rs.reduce((s,r)=>s+num(r.attempts),0),c=rs.reduce((s,r)=>s+num(r.completions),0);o[mk]=a?100*c/a:null}else if(m.average){const a=vals.filter(v=>v!==null&&Number.isFinite(Number(v)));o[mk]=a.length?a.reduce((x,y)=>x+Number(y),0)/a.length:null}else if(m.rating)o[mk]=passerRatingForRows(rs);else if(m.derived){const total=key=>rs.reduce((s,r)=>s+num(r[key]),0),att=total('attempts'),cmp=total('completions'),py=total('passing_yards'),ptd=total('passing_tds'),ints=total('passing_interceptions'),carries=rs.reduce((s,r)=>s+num(first(r,['carries','rushing_attempts'])),0),ry=total('rushing_yards'),rec=total('receptions'),targets=total('targets'),recy=total('receiving_yards');if(mk==='pass_yards_per_attempt')o[mk]=att?py/att:null;else if(mk==='pass_td_pct')o[mk]=att?100*ptd/att:null;else if(mk==='pass_int_pct')o[mk]=att?100*ints/att:null;else if(mk==='td_int_ratio')o[mk]=ints?ptd/ints:(ptd>0?ptd:null);else if(mk==='rushing_yards_per_carry')o[mk]=carries?ry/carries:null;else if(mk==='receiving_yards_per_catch')o[mk]=rec?recy/rec:null;else if(mk==='catch_rate')o[mk]=targets?100*rec/targets:null;else o[mk]=vals.length?vals.reduce((a,b)=>a+b,0):null}else o[mk]=vals.length?vals.reduce((a,b)=>a+b,0):null}return o}).sort((a,b)=>(b[k]??-Infinity)-(a[k]??-Infinity))}
+data=data.filter(r=>r[k]!==null&&r[k]!==undefined&&Number(r[k])!==0);$('tableTitle').textContent=view==='weekly'?`Week ${+$('weekSelect').value||week}, ${$('year').value} · ${label}`:view==='cumulative'?`Selected weeks total · ${label}`:view==='compare'?`Player-week rows · ${label}`:`Team totals · ${label}`;$('viewTag').textContent=view.toUpperCase();const cols=view==='compare'?['Rank','Player','Team','Pos','Week',label]:['Rank',view==='team'?'Team':'Player','Team','Pos',label,...(view==='cumulative'?['Games']:[])];headers(cols);$('tbody').innerHTML=data.slice(0,500).map((r,i)=>`<tr><td class="rank">${i+1}</td><td><b>${esc(r.player||'Unknown')}</b></td><td>${esc(teamName(r.team||'—'))}</td><td>${esc(r.position||'—')}</td>${view==='compare'?`<td>${r.week}</td>`:''}<td class="num"><b>${fmt(r[k],k)}</b></td>${view==='cumulative'?`<td class="num">${r.rows.length}</td>`:''}</tr>`).join('');$('emptyNote').classList.toggle('hidden',data.length>0);if(!data.length)$('tbody').innerHTML=`<tr><td colspan="${cols.length}" class="muted">No matching rows for these filters.</td></tr>`;$('kPlayers').textContent=new Set(data.map(r=>r.player)).size.toLocaleString();$('kWeeks').textContent=`${selectedWeeks.length}/${availableWeeks().length}`;$('kLeader').textContent=data[0]?.player||'—';$('kLeaderNote').textContent=data.length?`${fmt(data[0][k],k)} ${label.toLowerCase()}`:'No qualifying rows';drawChart(k);$('chartCaption').textContent=`${$('phase').selectedOptions[0].text} · ${$('year').value}`}
+function drawChart(k){const ws=selectedWeeks;const rows=filtered();const vals=ws.map(w=>{const rs=rows.filter(r=>r.week===w),vs=rs.map(r=>metricValue(r,k)).filter(v=>v!==null);let v;if(metrics[k].rate){const a=rs.reduce((s,r)=>s+num(r.attempts),0),c=rs.reduce((s,r)=>s+num(r.completions),0);v=a?100*c/a:0}else v=vs.reduce((s,x)=>s+x,0);return{w,v}});const max=Math.max(1,...vals.map(x=>x.v));$('chart').innerHTML=vals.length?vals.map(x=>`<div class="barcol"><div class="barvalue">${fmt(x.v,k)}</div><div class="bar" style="height:${Math.max(2,x.v/max*72)}%"></div><div class="barlabel">W${x.w}</div></div>`).join(''):'<div class="muted">Select one or more weeks to show the trend.</div>';$('chartTitle').textContent=`League total by selected week`}
+const comparisonYearCache={},comparisonYearPromises={};async function ensureComparisonYear(y){if(comparisonYearCache[y])return comparisonYearCache[y];if(comparisonYearPromises[y])return comparisonYearPromises[y];comparisonYearPromises[y]=fetch("./data/stats_player_week_"+y+".csv").then(res=>{if(!res.ok)throw Error("Could not load "+y+" player data (HTTP "+res.status+")");return res.text()}).then(txt=>{if(txt.trimStart().startsWith("<"))throw Error("Invalid CSV response for "+y);const rows=parseCSV(txt).map(normalize).filter(r=>r.season===+y&&r.week>=1&&r.week<=22&&r.player);comparisonYearCache[y]=rows;return rows}).finally(()=>{delete comparisonYearPromises[y]});return comparisonYearPromises[y]}
+function normalisePlayerName(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+function playerTotalWeeks(player,k,y,weeks,p,source=raw){const eligible=source.filter(r=>r.season===+y&&weeks.includes(+r.week)&&phaseMatches(r,p)&&r.player);const wanted=normalisePlayerName(player);let matched=eligible.filter(r=>normalisePlayerName(r.player)===wanted);if(!matched.length&&wanted.length>=4){const names=[...new Set(eligible.map(r=>r.player))],candidates=names.filter(n=>normalisePlayerName(n).includes(wanted)||wanted.includes(normalisePlayerName(n)));if(candidates.length===1)matched=eligible.filter(r=>r.player===candidates[0]);}const rr=matched;if(!rr.length)return{value:null,team:'—',weeksFound:[]};const vals=rr.map(r=>metricValue(r,k)).filter(v=>v!==null);let value;if(metrics[k].rate){const a=rr.reduce((s,r)=>s+num(r.attempts),0),c=rr.reduce((s,r)=>s+num(r.completions),0);value=a?100*c/a:null}else if(metrics[k].rating)value=passerRatingForRows(rr);else value=vals.length?vals.reduce((a,b)=>a+b,0):null;return{value,team:[...new Set(rr.map(r=>r.team).filter(Boolean))].join(', ')||'—',weeksFound:[...new Set(rr.map(r=>+r.week))].sort((a,b)=>a-b)}}
+function comparisonCard(i){
+ const p=i===1?'Josh Allen':i===2?'Derrick Henry':'';
+ const defaultYear=i===1?2020:2021;
+ const make=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
+ const card=make('div','comparison-card');card.dataset.card=String(i);
+ card.append(make('h3','',`Player ${i}`));
+ const addField=(labelText,control)=>{const field=make('div','field');const label=make('label','',labelText);field.append(label,control);card.append(field);return field;};
+ const name=make('input');name.id=`p${i}name`;name.setAttribute('list','playerSuggestions');name.placeholder='Type player name';name.value=p;name.dataset.field='name';
+ const nameField=addField('Player name',name);nameField.querySelector('label').htmlFor=name.id;
+ const yearsField=make('div','field');yearsField.append(make('label','','Seasons to compare'),make('div','small muted','Select one or more seasons. Each selected season gets its own results column.'));
+ const years=make('div','compare-years');YEARS.slice().reverse().forEach(year=>{const label=make('label');const input=make('input');input.type='checkbox';input.dataset.field='years';input.value=String(year);input.checked=year===defaultYear;label.append(input,document.createTextNode(String(year)));years.append(label);});yearsField.append(years);card.append(yearsField);
+ const phase=make('select');phase.id=`p${i}phase`;phase.dataset.field='phase';[['REG','Regular season'],['POST','Playoffs'],['ALL','Regular + playoffs']].forEach(([value,label])=>{const option=make('option','',label);option.value=value;phase.append(option);});
+ const phaseField=addField('Season phase',phase);phaseField.querySelector('label').htmlFor=phase.id;
+ const weeksField=make('div','field');weeksField.append(make('label','','Weeks to include (applies to each selected season)'));
+ const tools=make('div','week-tools');[['all','Select all'],['clear','Clear']].forEach(([action,text])=>{const button=make('button','btn',text);button.type='button';button.dataset.weekAction=action;tools.append(button);});weeksField.append(tools);
  const weeks=make('div','compare-weeks');for(let week=1;week<=22;week++){const label=make('label');const input=make('input');input.type='checkbox';input.dataset.field='weeks';input.value=String(week);input.checked=week<=6;label.append(input,document.createTextNode('W'+week));weeks.append(label);}weeksField.append(weeks);card.append(weeksField);
  return card.outerHTML;
 }
