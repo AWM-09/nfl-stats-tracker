@@ -9,15 +9,15 @@ const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 for (const id of [
   'pregameGame', 'postgameGame', 'factSeason', 'factPhase', 'factMetric',
   'factWeek', 'factTeam', 'factLimit', 'commentGame', 'commentTone',
-  'contentGame', 'contentTopic', 'contentEvidence', 'loadStatus', 'pregameOutput',
+  'contentGame', 'contentTopic', 'contentEvidence', 'roundSeason', 'roundWeek', 'roundMode', 'makeWeekly', 'weeklyOutput', 'predictionSeason', 'predictionWeek', 'makeWeekPredictions', 'weekPredictionOutput', 'weekPredictionCard', 'loadStatus', 'pregameOutput',
   'postgameOutput', 'factsOutput', 'commentaryOutput', 'contentOutput'
 ]) assert.match(page, new RegExp(`id=["']${id}["']`), `Commentary page is missing #${id}`);
 
-for (const feature of ['buildPregame', 'buildPostgame', 'factGen', 'draft', 'buildContent', 'recordsBefore', 'forecast', 'nextMeeting', 'pregameContext', 'postgameReport', 'loadGamePlays', 'gamePlaySummary']) {
+for (const feature of ['buildPregame', 'buildPostgame', 'factGen', 'draft', 'buildContent', 'recordsBefore', 'forecast', 'nextMeeting', 'pregameContext', 'postgameReport', 'standingsFor', 'conferenceContext', 'buildWeekly', 'buildWeekPredictions', 'updateWeekOptions', 'loadGamePlays', 'gamePlaySummary']) {
   assert.match(page, new RegExp(`function ${feature}\\(`), `Missing ${feature} generator`);
 }
-assert.match(page, /schedule\.csv\?v=commentary-20261111-v2/, 'Schedule request should use cache busting');
-assert.match(page, /stats_player_week_\$\{current\}\.csv\?v=commentary-20261111-v2/, 'Player stats request should use cache busting');
+assert.match(page, /schedule\.csv\?v=commentary-20261111-v3/, 'Schedule request should use cache busting');
+assert.match(page, /stats_player_week_\$\{current\}\.csv\?v=commentary-20261111-v3/, 'Player stats request should use cache busting');
 assert.match(page, /String\(v\)\.trim\(\)===''|String\(v\)\.trim\(\)===\"\"/, 'Blank schedule scores must not be treated as zero');
 assert.match(page, /x\.value>0/, 'Zero-valued players should not be described as game performances');
 assert.match(page, /PREDICTION/, 'Pregame notes should state the explicit model prediction');
@@ -25,6 +25,10 @@ assert.match(page, /NEXT SCHEDULED MEETING/, 'Pregame notes should report whethe
 assert.doesNotMatch(page, /Add at least 10 characters of evidence/, 'Content Studio must not require evidence notes');
 assert.match(page, /Optional extra notes/, 'Content notes should be clearly optional');
 assert.match(page, /COMPARATIVE READ/, 'Postgame analysis should compare team production');
+assert.match(page, /PLAYOFF \+ DRAFT CONTEXT/, 'Weekly roundup should include race context');
+assert.match(page, /60-SECOND PREDICTION SCRIPT/, 'Weekly prediction tool should produce a 60-second script');
+assert.match(page, /No tiebreakers|does not calculate NFL tiebreakers/, 'Weekly standings context should state its limitations');
+assert.match(page, /String\(x\.season\)===String\(game\.season\)/, 'Forecast records must be restricted to the selected season');
 assert.match(page, /play_by_play_\$\{season\}\.csv\.gz/, 'Postgame recap must load the published play-by-play data');
 assert.match(home, /href="\.\/commentary\.html(?:\?[^\"]*)?"/, 'Home page must link to Commentary Box');
 const playerPath = path.join(root, 'data', 'stats_player_week_2026.csv');
