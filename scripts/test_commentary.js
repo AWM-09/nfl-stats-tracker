@@ -26,7 +26,8 @@ assert.doesNotMatch(page, /Add at least 10 characters of evidence/, 'Content Stu
 assert.match(page, /Optional extra notes/, 'Content notes should be clearly optional');
 assert.match(page, /COMPARATIVE READ/, 'Postgame analysis should compare team production');
 assert.match(page, /PLAYOFF \+ DRAFT CONTEXT/, 'Weekly roundup should include race context');
-assert.match(page, /60-SECOND PREDICTION SCRIPT/, 'Weekly prediction tool should produce a 60-second script');
+assert.match(page, /60-SECOND SCRIPT/, 'Weekly prediction tool should display its 60-second script label');
+assert.match(page, /Here are my schedule-based picks for Week/, 'Weekly prediction generator should create a spoken predictions script');
 assert.match(page, /No tiebreakers|does not calculate NFL tiebreakers/, 'Weekly standings context should state its limitations');
 assert.match(page, /String\(x\.season\)===String\(game\.season\)/, 'Forecast records must be restricted to the selected season');
 assert.match(page, /play_by_play_\$\{season\}\.csv\.gz/, 'Postgame recap must load the published play-by-play data');
