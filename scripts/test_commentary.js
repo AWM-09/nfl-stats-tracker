@@ -19,6 +19,10 @@ for (const feature of ['buildPregame', 'buildPostgame', 'factGen', 'draft', 'bui
 assert.match(page, /schedule\.csv\?v=commentary-20261111/, 'Schedule request should use cache busting');
 assert.match(page, /stats_player_week_\$\{current\}\.csv\?v=commentary-20261111/, 'Player stats request should use cache busting');
 assert.match(home, /href="\.\/commentary\.html(?:\?[^\"]*)?"/, 'Home page must link to Commentary Box');
+const teamBuilder = fs.readFileSync(path.join(root, 'scripts', 'build_team_stats.py'), 'utf8');
+for (const column of ['points_scored', 'points_allowed', 'offensive_yards', 'yards_allowed', 'third_down_pct']) {
+  assert.ok(teamBuilder.includes(`"${column}"`), `Team-stat builder is missing ${column}`);
+}
 
 const playerPath = path.join(root, 'data', 'stats_player_week_2026.csv');
 if (fs.existsSync(playerPath)) {
