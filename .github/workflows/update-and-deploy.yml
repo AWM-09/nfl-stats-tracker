@@ -77,8 +77,13 @@ jobs:
           checked = 0
           with tempfile.TemporaryDirectory() as temp_dir:
               for page in pages:
+                  print(f"Checking inline JavaScript in {page}")
                   parser = InlineScriptParser()
-                  parser.feed(page.read_text(encoding="utf-8"))
+                  try:
+                      source_html = page.read_text(encoding="utf-8")
+                  except UnicodeDecodeError as exc:
+                      raise SystemExit(f"HTML page is not valid UTF-8: {page}: {exc}")
+                  parser.feed(source_html)
                   for index, script in enumerate(parser.scripts, start=1):
                       source = "".join(script["parts"])
                       if not source.strip():
