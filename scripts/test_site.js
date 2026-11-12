@@ -7,7 +7,7 @@ const path = require('node:path');
 const site = path.resolve('site');
 const expectedPages = [
   'index.html','tracker.html','player.html','health.html','advanced.html',
-  'research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','teams.html','commentary.html'
+  'research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','teams.html','commentary.html','favorites.html'
 ];
 
 for (const page of expectedPages) {
@@ -47,7 +47,7 @@ assert.equal(Object.keys(teamData.teams || {}).length, 32, 'Team Platform must c
 assert.ok(Object.values(teamData.teams).every(team => Array.isArray(team.roster)), 'Every franchise must expose a roster array, even when the source feed is incomplete.');
 
 const home = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
-for (const target of ['tracker.html','player.html','teams.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html','commentary.html']) {
+for (const target of ['tracker.html','player.html','teams.html','advanced.html','research.html','calendar.html','accuracy.html','news.html','playbook.html','rulebook.html','health.html','commentary.html','favorites.html']) {
   assert.ok(home.includes('./' + target), 'Homepage is missing a link to ' + target);
 }
 
@@ -63,6 +63,14 @@ const player = fs.readFileSync(path.join(site, 'player.html'), 'utf8');
 assert.ok(player.includes('./data/player-index.json'), 'Player profile page must use the generated profile index.');
 assert.ok(player.includes('stats_player_week_'), 'Player profile page must support on-demand game logs.');
 assert.ok(player.includes("searchParams.set('player'"), 'Player profiles must have shareable query URLs.');
+
+const favorites = fs.readFileSync(path.join(site, 'favorites.html'), 'utf8');
+for (const id of ['playerChoice','teamChoice','playerSort','playerDirection','teamSort','teamDirection','playerFavorites','teamFavorites']) {
+  assert.ok(favorites.includes('id="' + id + '"'), 'Favorites dashboard is missing ' + id);
+}
+assert.ok(favorites.includes('↑ High to low') && favorites.includes('↓ Low to high'), 'Favorites dashboard must expose both sort directions.');
+const favoritesScript = fs.readFileSync(path.join(site, 'favorites.js'), 'utf8');
+assert.ok(favoritesScript.includes('awmNFLFavoritesV1'), 'Favorites must persist in browser storage.');
 
 const health = fs.readFileSync(path.join(site, 'health.html'), 'utf8');
 assert.ok(health.includes('./data/site-manifest.json'), 'Health Centre must load the published data manifest.');
