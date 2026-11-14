@@ -64,8 +64,8 @@ let groups={offense:[],defense:[],special:[],other:[]};
 function metricCategory(key){
  if(/^(def_|total_tackles|defensive_impact)/.test(key))return 'defense';
  if(/^(fg_|pat_|punting_|punt_|kick_|return_|punts_)/.test(key))return 'special';
- if(/^(passing_|pass_|sacks_suffered|average_time_to_throw|td_int_ratio)/.test(key))return 'offense';
- if(/^(rushing_|carries|longest_rush|total_touchdowns|total_offensive_yards)/.test(key))return 'offense';
+ if(/^(passing_|pass_|sacks_suffered|average_time_to_throw|ngs_|qb_dropped_interceptions|td_int_ratio)/.test(key))return 'offense';
+ if(/^(rushing_|rush_|carries|longest_rush|total_touchdowns|total_offensive_yards)/.test(key))return 'offense';
  if(/^(receiving_|receptions|targets|catch_rate|average_depth_of_target|yards_from_scrimmage)/.test(key))return 'offense';
  return 'other';
 }
@@ -81,7 +81,7 @@ function setupMetricCatalogue(){
  if(keys.includes('passing_yards'))$('chartMetric').value='passing_yards';
 }
 function isPercentageMetric(key){
- return key.includes('pct')||key.endsWith('_rate')||key.endsWith('_cpoe')||['completion_pct','catch_rate','passing_cpoe'].includes(key);
+ return key.includes('pct')||key.endsWith('_rate')||key.endsWith('_cpoe')||key.endsWith('_share')||['completion_pct','catch_rate','passing_cpoe','receiving_target_share','receiving_air_yards_share'].includes(key);
 }
 function parseCSV(text){
  const rows=[];let row=[],value='',quoted=false;

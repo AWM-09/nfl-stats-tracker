@@ -6,7 +6,7 @@ from collections import defaultdict
 from pathlib import Path
 ROOT=Path("data")
 YEARS=range(2000,2027)
-FIELDS=["season","week","season_type","team","games_played","points_scored","points_allowed","points_scored_per_game","points_allowed_per_game","point_differential","offensive_yards","offensive_plays","offensive_yards_per_game","yards_allowed","yards_allowed_per_game","yards_per_play","turnover_differential","third_down_conversions","third_down_attempts","third_down_pct","third_down_pct_allowed","fourth_down_conversions","fourth_down_attempts","fourth_down_pct","fourth_down_attempts_allowed","fourth_down_stops","red_zone_tds","red_zone_trips","red_zone_td_pct","red_zone_tds_allowed","red_zone_trips_allowed","red_zone_td_pct_allowed","offensive_red_zone_turnovers","defensive_red_zone_turnovers","time_of_possession_seconds","penalties","penalty_yards","flags_thrown_for","flags_thrown_against","penalty_yards_for","penalty_yards_against","explosive_plays_20_plus","longest_play_td","longest_play_non_td","longest_play"]
+FIELDS=["season","week","season_type","team","games_played","points_scored","points_allowed","points_scored_per_game","points_allowed_per_game","point_differential","offensive_yards","offensive_plays","offensive_yards_per_game","yards_allowed","yards_allowed_per_game","yards_per_play","turnover_differential","third_down_conversions","third_down_attempts","third_down_pct","third_down_pct_allowed","fourth_down_conversions","fourth_down_attempts","fourth_down_pct","fourth_down_attempts_allowed","fourth_down_stops","red_zone_tds","red_zone_trips","red_zone_td_pct","red_zone_tds_allowed","red_zone_trips_allowed","red_zone_td_pct_allowed","offensive_red_zone_turnovers","defensive_red_zone_turnovers","time_of_possession_seconds","team_snaps","penalties","penalty_yards","flags_thrown_for","flags_thrown_against","post_snap_flags_against","unclassified_penalty_flags","flags_per_snap","post_snap_flags_per_snap","flags_per_snap_pct","post_snap_flags_per_snap_pct","penalty_yards_for","penalty_yards_against","explosive_plays_20_plus","longest_play_td","longest_play_non_td","longest_play"]
 def n(v):
  try:return float(v) if v not in ("",None) else 0.
  except (TypeError,ValueError):return 0.
@@ -15,6 +15,8 @@ def clock(v):
  try:
   p=str(v).split(":");return int(p[0])*60+int(p[1])+(int(p[2]) if len(p)>2 else 0)
  except Exception:return 0
+PRE_SNAP_PENALTIES={"false start","delay of game","encroachment","neutral zone infraction","illegal substitution","illegal shift","illegal motion","too many men on field","illegal formation","offside","defensive offside"}
+POST_SNAP_PENALTIES={"offensive holding","defensive holding","holding","defensive pass interference","pass interference","offensive pass interference","illegal contact","roughing the passer","roughing the kicker","running into the kicker","unnecessary roughness","face mask","facemask","illegal use of hands","hands to the face","personal foul","horse collar tackle","tripping","clipping","block in the back","illegal block","intentional grounding","defensive holding","illegal touching","illegal forward pass","illegal batting","taunting","unsportsmanlike conduct","roughing the snapper"}
 for year in YEARS:
  path=ROOT/f"play_by_play_{year}.csv"
  if not path.exists(): print(f"Skipping {year}: no play-by-play CSV");continue
@@ -34,6 +36,12 @@ for year in YEARS:
     g=games.setdefault(key,{"home":home,"away":away,"hs":0,"as":0})
     g["hs"]=max(g["hs"],n(r.get("home_score")));g["as"]=max(g["as"],n(r.get("away_score")))
    d=tg[(key,off)]; pt=(r.get("play_type") or "").lower(); y=n(r.get("yards_gained"))
+   penalty_type=" ".join((r.get("penalty_type") or "").lower().replace("-"," ").split())
+   # Count each recorded live play as one snap for both teams. Pre-snap
+   # no-play penalties are deliberately excluded from the denominator.
+   if (pt and pt!="no_play") or (pt=="no_play" and yes(r.get("penalty")) and penalty_type in POST_SNAP_PENALTIES):
+    tg[(key,off)]["team_snaps"]+=1
+    tg[(key,deff)]["team_snaps"]+=1
    if pt in ("pass","run","qb_kneel","qb_spike"):
     d["plays"]+=1;d["yards"]+=y
     # A single NFL play cannot gain more than 100 yards. Keep impossible
@@ -65,6 +73,10 @@ for year in YEARS:
      beneficiary=deff if penalized==off else off
      tg[(key,beneficiary)]["flags_thrown_for"]+=1
      tg[(key,beneficiary)]["penalty_yards_for"]+=yards
+     if penalty_type in POST_SNAP_PENALTIES:
+      tg[(key,penalized)]["post_snap_flags_against"]+=1
+     elif penalty_type not in PRE_SNAP_PENALTIES:
+      tg[(key,penalized)]["unclassified_penalty_flags"]+=1
    drive=str(r.get("drive") or ""); yl=n(r.get("yardline_100"))
    if is_turnover and 0 <= yl <= 20:d["red_zone_turnovers"]+=1
    if drive and 0<yl<=20:
@@ -107,6 +119,7 @@ for year in YEARS:
     if team==g["home"]:scored+=g["hs"];allowed+=g["as"]
     elif team==g["away"]:scored+=g["as"];allowed+=g["hs"]
    yards=b["yards"];plays=b["plays"];ta=b["third_att"];tc=b["third_conv"];taa=b["third_att_allowed"];tca=b["third_conv_allowed"];rz=b["rz_trips"];rzt=b["rz_tds"];rza=b["rz_trips_allowed"];rzta=b["rz_tds_allowed"]
-   row={"season":season,"week":week,"season_type":st,"team":team,"games_played":played,"points_scored":scored,"points_allowed":allowed,"points_scored_per_game":scored/played,"points_allowed_per_game":allowed/played,"point_differential":scored-allowed,"offensive_yards":yards,"offensive_plays":plays,"offensive_yards_per_game":yards/played,"yards_allowed":b["yards_allowed"],"yards_allowed_per_game":b["yards_allowed"]/played,"yards_per_play":yards/plays if plays else "","turnover_differential":b["turnovers_gained"]-b["turnovers"],"third_down_conversions":tc,"third_down_attempts":ta,"third_down_pct":100*tc/ta if ta else "","fourth_down_conversions":int(b["fourth_conv"]),"fourth_down_attempts":int(b["fourth_att"]),"fourth_down_pct":100*b["fourth_conv"]/b["fourth_att"] if b["fourth_att"] else "","fourth_down_attempts_allowed":int(b["fourth_att_allowed"]),"fourth_down_stops":int(b["fourth_stops"]),"third_down_pct_allowed":100*tca/taa if taa else "","red_zone_tds":rzt,"red_zone_trips":rz,"red_zone_td_pct":100*rzt/rz if rz else "","red_zone_tds_allowed":rzta,"red_zone_trips_allowed":rza,"red_zone_td_pct_allowed":100*rzta/rza if rza else "","offensive_red_zone_turnovers":int(b["red_zone_turnovers"]),"defensive_red_zone_turnovers":int(b["defensive_red_zone_turnovers"]),"time_of_possession_seconds":int(b["poss"]),"penalties":int(b["flags_thrown_against"]),"penalty_yards":int(b["penalty_yards_against"]),"flags_thrown_for":int(b["flags_thrown_for"]),"flags_thrown_against":int(b["flags_thrown_against"]),"penalty_yards_for":int(b["penalty_yards_for"]),"penalty_yards_against":int(b["penalty_yards_against"]),"explosive_plays_20_plus":int(b["explosive"]),"longest_play_td":b["long_td"],"longest_play_non_td":b["long_non_td"],"longest_play":b["longest"]}
+   snaps=int(b["team_snaps"]); flags=int(b["flags_thrown_against"]); post=int(b["post_snap_flags_against"])
+   row={"season":season,"week":week,"season_type":st,"team":team,"games_played":played,"points_scored":scored,"points_allowed":allowed,"points_scored_per_game":scored/played,"points_allowed_per_game":allowed/played,"point_differential":scored-allowed,"offensive_yards":yards,"offensive_plays":plays,"offensive_yards_per_game":yards/played,"yards_allowed":b["yards_allowed"],"yards_allowed_per_game":b["yards_allowed"]/played,"yards_per_play":yards/plays if plays else "","turnover_differential":b["turnovers_gained"]-b["turnovers"],"third_down_conversions":tc,"third_down_attempts":ta,"third_down_pct":100*tc/ta if ta else "","fourth_down_conversions":int(b["fourth_conv"]),"fourth_down_attempts":int(b["fourth_att"]),"fourth_down_pct":100*b["fourth_conv"]/b["fourth_att"] if b["fourth_att"] else "","fourth_down_attempts_allowed":int(b["fourth_att_allowed"]),"fourth_down_stops":int(b["fourth_stops"]),"third_down_pct_allowed":100*tca/taa if taa else "","red_zone_tds":rzt,"red_zone_trips":rz,"red_zone_td_pct":100*rzt/rz if rz else "","red_zone_tds_allowed":rzta,"red_zone_trips_allowed":rza,"red_zone_td_pct_allowed":100*rzta/rza if rza else "","offensive_red_zone_turnovers":int(b["red_zone_turnovers"]),"defensive_red_zone_turnovers":int(b["defensive_red_zone_turnovers"]),"time_of_possession_seconds":int(b["poss"]),"team_snaps":snaps,"penalties":flags,"penalty_yards":int(b["penalty_yards_against"]),"flags_thrown_for":int(b["flags_thrown_for"]),"flags_thrown_against":flags,"post_snap_flags_against":post,"unclassified_penalty_flags":int(b["unclassified_penalty_flags"]),"flags_per_snap":flags/snaps if snaps else "","post_snap_flags_per_snap":post/snaps if snaps else "","flags_per_snap_pct":100*flags/snaps if snaps else "","post_snap_flags_per_snap_pct":100*post/snaps if snaps else "","penalty_yards_for":int(b["penalty_yards_for"]),"penalty_yards_against":int(b["penalty_yards_against"]),"explosive_plays_20_plus":int(b["explosive"]),"longest_play_td":b["long_td"],"longest_play_non_td":b["long_non_td"],"longest_play":b["longest"]}
    wr.writerow({k:(round(v,3) if isinstance(v,float) and math.isfinite(v) else v) for k,v in row.items()})
  print(f"Wrote {out}")
