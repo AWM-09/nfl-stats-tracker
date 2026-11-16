@@ -345,6 +345,7 @@ jobs:
           cp teams.html site/teams.html
           test -s site/teams.html
           cp tracker.html site/tracker.html
+          cp sortable-tables.js site/sortable-tables.js
           cp player.html site/player.html
           cp health.html site/health.html
           cp research.html site/research.html
